@@ -1,0 +1,57 @@
+declaration: 
+
+	x : int;
+	const y = 10;
+	typedef struct {} Aluno; 
+	f : int, int -> int;
+
+end declaration 
+
+struct Aluno : 
+	//to do 
+
+end struct 
+
+
+
+func f(): 
+	
+	//to do
+
+end func
+
+
+main:
+
+if(condition):
+
+	// things
+
+elif(condition: 
+
+  	// things 
+
+end elif
+
+else
+
+	// things 
+
+end else
+end if
+
+for(i : int = 0; i < y; ++i)
+	
+	//things
+
+end for
+
+
+while(condition):
+
+	//things
+
+end while
+
+
+end main
