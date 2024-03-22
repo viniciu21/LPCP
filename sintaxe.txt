@@ -2,15 +2,12 @@ declaration:
 
 	x : int;
 	const y = 10;
-	typedef struct {} Aluno; 
+	typedef struct {
+		//to do
+	} Aluno; 
 	f : int, int -> int;
 
-end declaration 
-
-struct Aluno : 
-	//to do 
-
-end struct 
+end_declaration  
 
 
 
@@ -18,7 +15,7 @@ func f():
 	
 	//to do
 
-end func
+end_func
 
 
 main:
@@ -26,32 +23,32 @@ main:
 if(condition):
 
 	// things
-
-elif(condition: 
+end_if
+elif(condition): 
 
   	// things 
 
-end elif
+end_elif
 
 else
 
 	// things 
 
-end else
-end if
+end_else
+
 
 for(i : int = 0; i < y; ++i)
 	
 	//things
 
-end for
+end_for
 
 
 while(condition):
 
 	//things
 
-end while
+end_while
 
 
-end main
+end_main

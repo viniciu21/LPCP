@@ -4,7 +4,7 @@
 <DECLS> -> | <DECL_BEGIN> <DECS> <DECL_END>
 
 <DECS> -> <DECL> ';'
-	  | <DECL> ';' <DECS>
+	    | <DECL> ';' <DECS>
 
 <DECL> -> <var_decl> | <type_decl> |<const_decl> | <func_decl>
 
@@ -52,8 +52,8 @@
 <FOR> -> "for" '(' <atr> ';' <bool> ';' <opera> ') ':' <programa> <END_FOR>
 <IF> -> "if" '(' <bool> ')' ':' <programa> <END_IF>
 	| "if" '(' <bool> ')' ':' <programa> "elif" '(' <bool> ')' ':' <programa> <END_ELIF> <END_IF>
-	|"if" '(' <bool> ')' ':' <programa> "elif" '(' <bool> ')' ':' <programa> <END_ELIF> "else" <programa> <END_ELSE> <END_IF> 
-	|"if" '(' <bool> ')' ':' <programa> "else" <programa> <END_ELSE> <END_IF>  
+	|"if" '(' <bool> ')' ':' <programa> <END_IF> "elif" '(' <bool> ')' ':' <programa> <END_ELIF> "else" <programa> <END_ELSE> 
+	|"if" '(' <bool> ')' ':' <programa> <END_IF> "else" <programa> <END_ELSE>   
 
 <WHILE> -> "while" '(' <bool> ')' <programa> <END_WHILE>
 
