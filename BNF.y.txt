@@ -1,6 +1,5 @@
 <P> -> <DECLS> <SUBPs> <M>
 
-
 <DECLS> -> | <DECL_BEGIN> <DECS> <DECL_END>
 
 <DECS> -> <DECL> ';'
@@ -36,16 +35,28 @@
 	   | ID '=' <expression>
 
 <expression> -> <expression> + <term> 
-			  | <expression> - <term>
-			  | <expression> && <expression> 
-			  | <expression> || <expression> 
-			  | <expression> ^ <expression>
-				| !<expression>
-				| <expression> < <expression>
-				| <expression> > <expression> 
-				| <expression> == <expression>
-				| <expression> != <expression>
-				| ID | <call> | <value>
+			| <expression> - <term>
+			| <expression> && <expression> 
+			| <expression> || <expression> 
+			| <expression> ^ <expression>
+			| !<expression>
+			| <expression> < <expression>
+			| <expression> > <expression> 
+			| <expression> == <expression>
+			| <expression> != <expression>
+			| ID 
+			| <call> 
+			| <value>
+
+	#Sugiro | (<expression>) dado que:
+			# if (!(a && b) && c) ...
+			# <if> => IF '('<expression>')' ...
+			#	   => IF (!<expression>) ...
+			#	   => IF (!<expression> && <expression>)
+			#	   => IF (!<expression> && ID) 
+			#	   => IF (!<expression>?? && ID) ERRO COMO COLOCAR PARENTESES?
+			# A não ser que a semantica leia sem necessitar dos parenteses igual python
+
 <term> -> <term> * <factor>
 		| <term> / <factor>
 <factor> -> <exponential> ** <factor>
@@ -56,7 +67,8 @@
 <for> -> FOR '(' <atr> ';' <expression> ';' <atr> ') ':' <stmts> <END_FOR>
 <if> -> IF '('<expression')' <stmts> <elifs> <else> END_IF
 <elifs> -> | <elif> <elifs>
-<elif> -> elif'('<expression>')'
+<elif> -> ELIF '('<expression>')' <stmts> #Sugiro END_ELIF
+<else> -> ELSE <stmts> #Sugiro END_ELSE
 <while> -> WHILE '(' <expression> ')' <stmts> <END_WHILE>
 
 

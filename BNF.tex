@@ -1,0 +1,145 @@
+<P> -> <DECLS> <SUBPs> <M>
+
+<DECLS> -> | <DECL\_BEGIN> <DECS> <DECL\_END>
+
+<DECS> -> <DECL> ';' 
+
+\hspace{2cm}| <DECL> ';' <DECS>
+
+<DECL> -> <var\_decl> 
+
+\hspace{2cm}| <type\_decl> 
+
+\hspace{2cm}|<const\_decl> 
+
+\hspace{2cm}| <func\_decl> 
+
+
+<var\_decl> ->  <IDs> ':' <type> 
+
+<IDs> -> ID 
+
+\hspace{2cm}| ID ',' <IDs>
+
+<const\_decl> -> CONST ID '=' <value> 
+
+<func\_decl> -> ID ':' <types> -> <type> 
+
+<types> -> <type>
+
+\hspace{2cm}| <type> ',' <types> 
+
+<type\_decl> -> typedef struct '{' <DECS> '}' ID 
+
+\hspace{2cm}| typedef ID ID
+
+<value> -> INT 
+
+\hspace{2cm}| CHAR 
+
+\hspace{2cm}| STRING 
+
+\hspace{2cm}| FLOAT 
+
+\hspace{2cm}| BOOL 
+
+<type> -> <int> 
+
+\hspace{2cm}| <char> 
+
+\hspace{2cm}| <string> 
+
+\hspace{2cm}| <float> 
+
+\hspace{2cm}| <bool>
+
+<SUBPs> -> <FUNC> ID ':' <decs> <stmts> <END\_FUNC>
+
+<M> -> <BEGIN\_M> ':' <stmts> <END\_M>
+
+<stmts> ->  | <stmt> <stmts> 
+
+<stmt> -><DECS> 
+
+\hspace{2cm}| <for> 
+
+\hspace{2cm}| <while> 
+
+\hspace{2cm}| <if> 
+
+\hspace{2cm}| <atr> 
+
+<atr> -> ID '=' <value> 
+
+\hspace{2cm}| ID '=' <expression>
+
+<expression> -> <expression> + <term> 
+
+\hspace{2cm}| <expression> - <term> 
+
+\hspace{2cm}| <expression> \&\& <expression> 
+
+\hspace{2cm}| <expression> || <expression> 
+
+\hspace{2cm}| <expression> \^{} <expression> 
+
+\hspace{2cm}| !<expression> 
+
+\hspace{2cm}| <expression> < <expression> 
+
+\hspace{2cm}| <expression> > <expression> 
+
+\hspace{2cm}| <expression> == <expression> 
+
+\hspace{2cm}| <expression> != <expression> 
+
+\hspace{2cm}| ID 
+
+\hspace{2cm}| <call> 
+
+\hspace{2cm}| <value> 
+
+	#Sugiro | (<expression>) dado que:
+			# if (!(a && b) && c) ...
+			# <if> => IF '('<expression>')' ...
+			#	   => IF (!<expression>) ...
+			#	   => IF (!<expression> && <expression>)
+			#	   => IF (!<expression> && ID) 
+			#	   => IF (!<expression>?? && ID) ERRO COMO COLOCAR PARENTESES?
+			# A não ser que a semantica leia sem necessitar dos parenteses igual python
+
+<term> -> <term> * <factor> 
+
+\hspace{2cm}| <term> / <factor>
+
+<factor> -> <exponential> ** <factor> 
+
+\hspace{2cm}| <exponential>
+
+<exponential> -> (<expression>) 
+
+\hspace{2cm}| ID 
+
+\hspace{2cm}| <call> 
+
+
+<for> -> FOR '(' <atr> ';' <expression> ';' <atr> ') ':' <stmts> <END\_FOR>
+    
+<if> -> IF '('<expression')' <stmts> <elifs> <else> END\_IF
+
+<elifs> -> 
+
+\hspace{2cm}| <elif> <elifs>
+
+<elif> -> ELIF '('<expression>')' <stmts> #Sugiro END_ELIF
+
+<else> -> ELSE <stmts> #Sugiro END_ELSE
+
+<while> -> WHILE '(' <expression> ')' <stmts> <END\_WHILE>
+
+
+
+  
+
+
+	
