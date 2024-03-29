@@ -31,7 +31,10 @@
 <M> -> <BEGIN_M> ':' <stmts> <END_M>
 
 <stmts> ->  | <stmt> <stmts> 
-<stmt> -><DECS> | <for> | <while> | <if> | <atr> 
+<stmt> -><DECS> | <for> | <while> | <if> | <atr> | <rtn>
+
+<rtn> -> "return" <expression> ";"
+
 <atr> -> ID '=' <value> 
 	   | ID '=' <expression>
 
@@ -45,7 +48,9 @@
 				| <expression> > <expression> 
 				| <expression> == <expression>
 				| <expression> != <expression>
-				| ID | <call> | <value>
+				| ID ]
+				| <call> 
+				| <value>
 <term> -> <term> * <factor>
 		| <term> / <factor>
 <factor> -> <exponential> ** <factor>
