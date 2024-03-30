@@ -1,3 +1,134 @@
-1. Syntax Rule : <atr> -> ID '=' <value> |ID '=' <expression>
-2. Semantic Rule : <expression>.expected_type <- ID.actual_type 
-                   |<value>.expected_type <- ID.expected_type 
+1. Syntax Rule: <atr> -> ID '=' <value> 
+2. Semantic Rule: <atr>.type <- <value>.type;
+
+3. Syntax Rule: <atr> -> ID '=' <expression> 
+4. Semantic Rule: <atr>.type <- <expression>.type;
+
+5. Syntax Rule: <expression> -> <expression> + <term> 
+6. Semantic Rule: <expression>.actual_type <- 
+                    if(<expression>.actual_type = INT AND <term>.actual_type = INT) : 
+                        return INT;
+                    else: 
+                        return FLOAT; 
+
+Predicate : <expression>.actual_type == <expression>.expected_type 
+
+7. Syntax Rule: <expression> -> <expression> - <term> 
+8. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type = INT AND <term>.actual_type = INT) : 
+                        return INT;
+                    else: 
+                        return FLOAT; 
+Predicate : <expression> -> <expression>.actual_type == <expression>.expected_type  
+
+9. Syntax Rule: <expression> -> <expression> && <expression>[2] 
+10. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type = BOOL AND <expression>[2].actual_type = BOOL) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+
+11. Syntax Rule: <expression> -> <expression> || <expression>[2] 
+12. Semantic Rule : <expression> -> <expression>.actual_type <- 
+                    if(<expression>.actual_type = BOOL AND <expression>[2].actual_type = BOOL) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+
+13. Syntax Rule: <expression> -> <expression> ^ <expression>[2] 
+14. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type = BOOL AND <expression>[2].actual_type = BOOL) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+
+15. Syntax Rule: <expression> -> !<expression>
+16. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type = BOOL) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+
+17. Syntax Rule: <expression> -> <expression> < <expression>[2] 
+18. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type EQ <expression>[2].actual_type) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+Predicate : <expression>.actual_type == <expression>.expected_type  
+
+19. Syntax Rule: <expression> -> <expression> > <expression>[2]
+20. Semantic Rule : <expression>.actual_type <- 
+                    if(<expression>.actual_type EQ <expression>[2].actual_type) : 
+                        return BOOL;
+                    else: 
+                        return type_error; 
+Predicate : <expression>.actual_type == <expression>.expected_type 
+
+21. Syntax Rule: <expression> -> <expression> == <expression>[2]
+22. Semantic Rule: <expression>.actual_type <- 
+                    if(<expression>.actual_type EQ <expression>[2].actual_type ) : 
+                        if( <expression>.value EQ <expression>[2].value) :
+                            return BOOL;
+                        else :
+                            return BOOL; 
+                        end_else
+                        end_if
+                    else: 
+                        return type_error; 
+                    end_else
+                    end_if
+Predicate : <expression>.actual_type == <expression>.expected_type 
+
+
+23. Syntax Rule: <expression> -> <expression> != <expression>[2]
+24. Semantic Rule : <expression>.actual_type <-
+                    if(<expression>.actual_type EQ <expression>[2].actual_type) : 
+                        if(<expression>.value EQ  <expression>[2].value) : 
+                            return BOOL;
+                        else : 
+                            return BOOL;
+                        end_else
+                        end_if
+                    else : 
+                        return type_error;
+                    end_else
+                    end_if
+
+Predicate : <expression>.actual_type == <expression>.expected_type 
+            <expression>.value == look-up(result(<expression>).string) 
+
+
+25. Syntax Rule : <expression> -> <call> 
+26. Semantic Rule : <expression>.actual_type <- look-up(<call>.function_type)
+Predicate: <expression>.actual_type == <expression>.expected_type
+
+
+
+
+
+
+27. Syntax Rule : <expression> -> <value> 
+29. Semantic Rule : <expression>.actual_type <- <value>.type
+Predicate: <expression>.actual_type == <expression>.expected_type
+ 
+                        
+
+3. Syntax Rule : <expression> -> ID 
+4. Semantic Rule: <ID>.actual_type <- look-up(ID.string) 
+
+
+// 
+
+1. Syntax Rule : <rtn> -> "return" <expression> ';'
+2. Semantic Rule : <expression>.actual_type <-
+    if (<expression>.type == função_retorno) : 
+        <rtn>.type = <expression>.type;
+    else :
+        type_error;
+    end_else
+    end_if
+3. Predicate : <expression>.actual_type == <expression>.expected_type
+    
+
+

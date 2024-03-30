@@ -48,7 +48,7 @@
 				| <expression> > <expression> 
 				| <expression> == <expression>
 				| <expression> != <expression>
-				| ID ]
+				| ID
 				| <call> 
 				| <value>
 <term> -> <term> * <factor>
@@ -62,7 +62,7 @@
 <if> -> IF '('<expression')' <stmts> <elifs> <else> END_IF
 <elifs> -> | <elif> <elifs>
 <elif> -> elif'('<expression>')'
-<while> -> WHILE '(' <expression> ')' <stmts> <END_WHILE>
+<while> -> WHILE '(' <expression> ')' <stmts> END_WHILE
 
 
 
