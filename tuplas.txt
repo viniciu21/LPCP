@@ -1,0 +1,27 @@
+declaration: 
+f : int, int -> string, int, bool, char, float;
+end_declaration  
+
+func f(n, m): 
+	int soma = n + m; 
+    string texto = "a soma de  n e m é "; 
+    bool estado = true; 
+    char caracter = 's';
+    float decimal = 10. 
+	return( texto , soma, estado, caracter , decimal); 
+
+end_func
+
+
+main:
+
+tuplas = ("oi", 1, true, 'a', 2.3); 
+
+tupla = f(5, 5); 
+#o retorno será ("a soma de  n e m é " , 10 , true, 's' , 10.0); 
+
+#("oi", 1, true, 'a', 2.3) != (1, true, 'a', 2.3, "oi")
+#(1, 2 , 2 , 3) != (1, 2, 3)
+
+
+end_main
