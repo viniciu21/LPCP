@@ -9,7 +9,6 @@ func f(n, m):
     char caracter = 's';
     float decimal = 10. 
 	return( texto , soma, estado, caracter , decimal); 
-
 end_func
 
 

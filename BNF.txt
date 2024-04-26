@@ -1,63 +1,70 @@
-<P> -> <DECLS> <SUBPs> <M>
+<P> -> <decl_sec> <subps> <main>
 
 
-<DECLS> -> | <DECL_BEGIN> <DECS> <DECL_END>
+<decl_sec> -> | BEGIN_DECL <decls> END_DECL
 
-<DECS> -> <DECL> ';'
-	    | <DECL> ';' <DECS>
+<decls> -> <decl> ';'
+	    | <decl> ';' <decls>
 
-<DECL> -> <var_decl> | <type_decl> |<const_decl> | <func_decl>
+<decl> -> <var_decl> | <type_decl> |<const_decl> | <func_decl>
 
-<var_decl> ->  <ids> ':' <type>
+<var_decl> ->  <IDs> ':' <type> 
 
-<ids> -> <id> | <id> ',' <ids>
+<IDs> -> ID | ID ',' <IDs>
 
-<const_decl> -> "const" <id> '=' <value>
+<const_decl> -> CONST ID '=' <value> 
 
-<func_decl> -> <id> ':' <args> "->" <type>
-
-<args> -> <types>
+<func_decl> -> ID ':' <types> -> <type> 
 
 <types> -> <type>
-	| <type> ',' <types> 
+	     | <type> ',' <types> 
 
+<type_decl> -> typedef struct '{' <decls> '}' ID 
+			 | typedef ID ID
 
-<value> -> <number> | <caracter> | <cadeia> 
+<value> -> INT | CHAR | STRING | FLOAT | BOOL 
 
-<number> -> Conjunto dos números reais 
-<caracter> -> elemento da tabela ascii
-<cadeia> -> <caracter> <cadeia> 
-<id> -> <cadeia>
 <type> -> <int> | <char> | <string> | <float> | <bool>
 
-<SUBPs> -> "func" <id> ':' <programa> <END_FUNC>
+<subps> -> BEGIN_FUNC ID (<IDs>) ':' <stmts> END_FUNC
 
-<M> -> <BEGIN_M> <programa> <END_M>
+<main> -> BEGIN_MAIN ':' <stmts> END_MAIN
 
-<programa> -> <DECS> <programa> 
-	      | <FOR> <programa>
-	      | <WHILE> <programa>
-	      | <IF> <programa>
-	      | <atr> <programa>
-<atr> -> <id> '=' <value> 
-	 | <id> '=' <opera>
-<opera> -> <id> <op> <id> 
-	   |<id> <op> <opera>
-	   |<id> <op> <value>
-	   |<value> <op> <value>
-	   |<value> <op> <opera>
+<stmts> -> <stmt>
+		| <stmt> ; <stmts> 
+<stmt> -> <decls> | <for> | <while> | <if> | <atr> | <rtn>
 
-<op> -> '+' | '-' | '/' | '*' | '**' 
+<rtn> -> "return" <expression> ";"
 
-<FOR> -> "for" '(' <atr> ';' <bool> ';' <opera> ') ':' <programa> <END_FOR>
-<IF> -> "if" '(' <bool> ')' ':' <programa> <END_IF>
-	| "if" '(' <bool> ')' ':' <programa> "elif" '(' <bool> ')' ':' <programa> <END_ELIF> <END_IF>
-	|"if" '(' <bool> ')' ':' <programa> <END_IF> "elif" '(' <bool> ')' ':' <programa> <END_ELIF> "else" <programa> <END_ELSE> 
-	|"if" '(' <bool> ')' ':' <programa> <END_IF> "else" <programa> <END_ELSE>   
+<atr> -> ID '=' <value> 
+	   | ID '=' <expression>
 
-<WHILE> -> "while" '(' <bool> ')' <programa> <END_WHILE>
+<expression> -> <expression> '+' <term> 
+			  | <expression> '-' <term>
+			  | <expression> '&&' <expression> 
+			  | <expression> '||' <expression> 
+			  | <expression> '^' <expression>
+				| '!' <expression>
+				| <expression> '<' <expression>
+				| <expression> '>' <expression> 
+				| <expression> '==' <expression>
+				| <expression> '!=' <expression>
+				| ID
+				| <call> 
+				| <value>
+				| '(' <expression> ')'
 
-  
+<term> -> <term> * <factor>
+		| <term> / <factor>
+		| <term> // <factor>
+<factor> -> <exponential> ** <factor>
+          | <exponential>
+<exponential> -> '(' <expression> ')' | ID | <call>
 
-
-	
+<for> -> FOR '(' <atr> ';' <expression> ';' <atr> ') ':' <stmts> END_FOR
+<if> -> IF '('<expression')' ':' <stmts> <elifs> <else> END_IF
+<elifs> -> <elif>
+		| <elif> <elifs>
+<elif> -> ELIF '(' <expression> ')' ':' <stmts>
+<else> -> ELSE ':' <stmts>
+<while> -> WHILE '(' <expression> ')' ':' <stmts> END_WHILE

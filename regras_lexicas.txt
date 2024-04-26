@@ -1,0 +1,59 @@
+Exemplo: 
+declaration: 
+soma : int, int -> int;
+end_declaration  
+
+func soma(n, m): 
+    # Função soma
+	int soma = n + m; 
+	return(soma); 
+end_func
+
+
+MAIN:
+int n = 10;
+int m = 9;
+int r = soma(n, m);
+bool big;
+string ok = "perfeito";
+string baixo = "muito baixo";
+string alto = "muito alto;
+
+if (r > 15):
+    print(alto);
+elif (r < 15):
+    print(baixo);
+else:
+    print(ok);
+
+return(r);
+end_main
+
+Regras Léxicas
+
+$digit = 0-9      -- digits
+$alpha = [a-zA-Z]   -- alphabetic characters
+
+$white+                                 # ignore espaços
+"#".*                                   # ignore comentarios
+
+:                                       # Colon
+;                                       # SemiColon
+,                                       # Comma
+->                                      # To
+
+int                                     # Int
+string                                  # String
+bool                                    # Bool
+
+if                                      # If
+elif                                    # Elif
+else                                    # Else
+return                                  # Return
+
+declaration                             # Declaration 
+end_declaration                         # End declaration
+func                                    # Func
+end_func                                # End func
+main                                    # Main
+end_main                                # End main
