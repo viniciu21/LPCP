@@ -10,7 +10,7 @@ func soma(n, m):
 end_func
 
 
-MAIN:
+main:
 int n = 10;
 int m = 9;
 int r = soma(n, m);
@@ -36,21 +36,46 @@ $alpha = [a-zA-Z]   -- alphabetic characters
 
 $white+                                 # ignore espaços
 "#".*                                   # ignore comentarios
-
+$alpha [$alpha $digit \_ \']*           # ID
 :                                       # Colon
 ;                                       # SemiColon
 ,                                       # Comma
+(                                       # Left Parenthesis
+)                                       # Right Parenthesis
+{                                       # Left Brackets
+}                                       # Right Brackets
 ->                                      # To
-
++                                       # Plus
+-                                       # Minus
+*                                       # Times
+/                                       # Divider
+//                                      # Integer Divider
+**                                      # Exponent
+&&                                      # And
+||                                      # Or
+^                                       # Xor
+!                                       # Not
+<                                       # Less
+>                                       # Greater
+==                                      # Equal
+!=                                      # Different
 int                                     # Int
+char                                    # Char
 string                                  # String
 bool                                    # Bool
-
+list                                    # List
+stack                                   # Stack
+queue                                   # Queue
+matrix                                  # Matrix
+graph                                   # Graph
+tree                                    # Tree
+n-array                                 # N-array
 if                                      # If
 elif                                    # Elif
 else                                    # Else
+for                                     # For
+while                                   # While
 return                                  # Return
-
 declaration                             # Declaration 
 end_declaration                         # End declaration
 func                                    # Func
