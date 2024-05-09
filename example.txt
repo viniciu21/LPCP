@@ -1,0 +1,29 @@
+declaration: 
+soma : int, int -> int;
+end_declaration  
+
+func soma(n, m): 
+    # Função soma
+	int soma = n + m; 
+	return(soma); 
+end_func
+
+
+main:
+int n = 10;
+int m = 9;
+int r = soma(n, m);
+bool big;
+string ok = "perfeito";
+string baixo = "muito baixo";
+string alto = "muito alto;
+
+if (r > 15):
+    print(alto);
+elif (r < 15):
+    print(baixo);
+else:
+    print(ok);
+
+return(r);
+end_main

@@ -1,0 +1,53 @@
+**** EXEMPLO DE PROGRAMA FONTE ESCRITO EM UMA LINGUAGEM PROPOSTA ****
+
+typedef racional = Registro {num: Inteiro; den: Inteiro}
+
+racional createRacional(int a, int b){
+   racional r;
+   r.num = a;
+   r.den = b;
+
+   retorne r;
+}
+
+int main(){
+  racional r = createRacional(1, 2);
+  retorne 0;
+}
+
+**** NO NÍVEL DO HASKELL ****
+
+*** Para definir o tipo da "tabela" que registra tipos (+valores) primitivos e definidos pelo usuário ***
+
+data Type = Inteiro Int | Flutuante Float | Registro String * [String * Type] | ...
+
+Notem que estamos usando "Type" tanto para definir tipos como, potencialmente, armazenar valores.
+
+** Para o programa acima, assuma que registramos os tipos na tabela "type_table": **
+
+* Tipo de "type_table": *
+type_table :: [Type]
+
+* Conteúdo de "type_table" após processarmos o "typedef": *
+
+type_table = [Inteiro 0, Flutuante 0.0, Registro ("racional", [(num, Inteiro 0),(den, Inteiro 0)])]
+
+Percebam que estamos usando valores associados aos tipos apenas para manter a conformidade com a definição e, posteriormente, podermos registrar os valores associados às variáveis de cada tipo.
+
+** Assuma que registramos as variáveis de um programa em "memory": **
+
+* Tipo de "memory", onde temos triplas escopo, nome, tipo(+valor) para cada variável: *
+
+memory :: [String * String * Type]
+
+* Para o programa acima, conteúdo de "memory" durante a execução de createRacional(...), exatamente antes do retorno: *
+
+memory = [("main", "r", Registro ("racional", [(num, Inteiro 0), (den, Inteiro 0)])),
+          ("createRacional", "a", Inteiro 1), 
+          ("createRacional", "b", Inteiro 2),
+          ("createRacional", "r", Registro ("racional", [(num, Inteiro 1), (den, Inteiro 2)]))     
+         ]
+
+Esta versão assume que todas as variáveis estão armazenadas em uma única "tabela" e estamos empregando valores default para inicializar os tipos primitivos. 
+
+Lembrem que precisaremos armazenar outras coisas, como os subprogramas definidos...

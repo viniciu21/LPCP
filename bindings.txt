@@ -1,0 +1,47 @@
+declaration: 
+
+	count : int;
+    const y = 10;
+    x : float; 
+
+end_declaration  
+
+
+main: 
+    count = 9; 
+    x = 9.5; 
+
+    x = x + count; 
+    # resultará em um float 18.5. 
+    # nesse caso a operação com um tipo diferente é aceito!
+
+    i : int = 0; 
+
+end_main
+
+
+declaration: 
+    num : int;
+    ber : int;
+    f : int, int -> int;
+end_declaration
+
+func f(a, b):
+
+    return a + b; 
+end_func
+
+
+main: 
+    num = 4;
+    ber = 6; 
+
+    # a variavel soma é declarada como um inteiro
+    # e recebe um valor inteiro resultante da função f que soma os inteiros num e ber
+    soma : int = f(num, ber); 
+
+end_main
+
+
+
+
