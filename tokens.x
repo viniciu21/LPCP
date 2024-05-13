@@ -1,5 +1,8 @@
 {
-    module Main (main) where
+module Tokens where
+    
+import System.IO
+import System.IO.Unsafe
 }
 
 %wrapper "basic"
@@ -113,7 +116,9 @@ data Token =
     deriving (Eq,Show)
 
 
-main = do
-    s <- getContents
-    print(alexScanTokens s)
+getTokens fn = unsafePerformIO (getTokensAux fn)
+
+getTokensAux fn = do {fh <- openFile fn ReadMode;
+                      s <- hGetContents fh;
+                      return (alexScanTokens s)}
 }

@@ -1,5 +1,4 @@
-<P> -> <decl_sec> <subps> <main>
-
+<program> -> <decl_sec> <subps> <main>
 
 <decl_sec> -> | BEGIN_DECL <decls> END_DECL
 
@@ -32,11 +31,11 @@
 
 <stmts> -> <stmt>
 		| <stmt> ; <stmts> 
-<stmt> -> <decls> | <for> | <while> | <if> | <atr> | <rtn>
+<stmt> -> <decls> | <for> | <while> | <if> | <assign> | <rtn>
 
 <rtn> -> "return" <expression> ";"
 
-<atr> -> ID '=' <value> 
+<assign> -> ID '=' <value> 
 	   | ID '=' <expression>
 
 <expression> -> <expression> '+' <term> 

@@ -4,7 +4,10 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# LANGUAGE CPP #-}
 {-# LINE 1 "tokens.x" #-}
-module Main (main) where
+module Tokens where
+    
+import System.IO
+import System.IO.Unsafe
 #include "ghcconfig.h"
 import qualified Data.Array
 #define ALEX_BASIC 1
@@ -23969,7 +23972,7 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 69 "tokens.x" #-}
+{-# LINE 72 "tokens.x" #-}
 data Token = 
     Id String                       |
     Colon                           |
@@ -24016,6 +24019,8 @@ data Token =
     deriving (Eq,Show)
 
 
-main = do
-    s <- getContents
-    print(alexScanTokens s)
+getTokens fn = unsafePerformIO (getTokensAux fn)
+
+getTokensAux fn = do {fh <- openFile fn ReadMode;
+                      s <- hGetContents fh;
+                      return (alexScanTokens s)}
