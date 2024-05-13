@@ -9,4 +9,7 @@ end_declaration
 main:
     a = 10;
     b = "oi";
+    c = 'o';
+    d = 10.102;
+    e = false;
 end_main
