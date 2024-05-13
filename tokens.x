@@ -38,6 +38,7 @@ tokens :-
     "=="                                      { \s -> Equal } 
     "!="                                      { \s -> Different } 
     "int"                                     { \s -> Type s } 
+    "float"                                   { \s -> Type s } 
     "char"                                    { \s -> Type s } 
     "string"                                  { \s -> Type s } 
     "bool"                                    { \s -> Type s } 

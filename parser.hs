@@ -54,6 +54,26 @@ intValToken = tokenPrim show update_pos get_token
     get_token (IntValue x) = Just (IntValue x)
     get_token _ = Nothing
 
+floatValToken = tokenPrim show update_pos get_token
+  where
+    get_token (FloatValue x) = Just (FloatValue x)
+    get_token _ = Nothing
+
+charValToken = tokenPrim show update_pos get_token
+  where
+    get_token (CharValue x) = Just (CharValue x)
+    get_token _ = Nothing
+
+stringValToken = tokenPrim show update_pos get_token
+  where
+    get_token (StringValue x) = Just (StringValue x)
+    get_token _ = Nothing
+
+boolValToken = tokenPrim show update_pos get_token
+  where
+    get_token (BoolValue x) = Just (BoolValue x)
+    get_token _ = Nothing
+
 update_pos :: SourcePos -> Token -> [Token] -> SourcePos
 update_pos pos _ (tok : _) = pos -- necessita melhoria
 update_pos pos _ [] = pos
@@ -103,24 +123,34 @@ stmts = do
 remainingStmts :: Parsec [Token] st [Token]
 remainingStmts =
   ( do
-      semiCol <- semiColonToken
-      stmt <- stmt
-      return ([semiCol] ++ stmt)
+      stmt -- Recursão em stms dando loop
   )
     <|> return []
 
 stmt :: Parsec [Token] st [Token]
 stmt =
-  do
-    assign
+  ( do
+      assignTok <- assign
+      semiCol <- semiColonToken
+      return (assignTok ++ [semiCol])
+  )
     <|> return []
 
 assign :: Parsec [Token] st [Token]
 assign = do
   id <- idToken
   assignSym <- assignToken
-  intVal <- intValToken
-  return (id : assignSym : [intVal])
+  value <- assignVal
+  return (id : assignSym : [value])
+
+assignVal :: Parsec [Token] st Token
+assignVal =
+  do
+    intValToken
+    <|> floatValToken
+    <|> charValToken
+    <|> stringValToken
+    <|> boolValToken
 
 -- invocação do parser para o símbolo de partida
 
@@ -128,6 +158,6 @@ parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_uma_atribuicao.txt") of
+main = case parser (getTokens "exemplo_atribuicao_tipos_simples.txt") of
   Left err -> print err
   Right ans -> print ans

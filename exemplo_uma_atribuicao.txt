@@ -6,5 +6,7 @@ declaration:
 end_declaration
 
 main:
-    a = 10; 
+    a = 10;
+    b = 20;
+    c = 30;
 end_main
