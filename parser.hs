@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use :" #-}
 module Main (main) where
 
 import Data.Binary.Get (remaining)
@@ -40,6 +43,7 @@ semiColonToken = tokenPrim show update_pos get_token
     get_token _ = Nothing
 
 -- , Comma
+commaToken :: Parsec [Token] st Token
 commaToken = tokenPrim show update_pos get_token
   where
     get_token Comma = Just Comma
@@ -58,18 +62,21 @@ rightParenthesisToken = tokenPrim show update_pos get_token
     get_token _ = Nothing
 
 -- { LeftCurlyBrackets
+leftCurlyBracketsToken :: Parsec [Token] st Token
 leftCurlyBracketsToken = tokenPrim show update_pos get_token
   where
     get_token LeftCurlyBrackets = Just LeftCurlyBrackets
     get_token _ = Nothing
 
 -- } RightCurlyBrackets
+rightCurlyBracketsToken :: Parsec [Token] st Token
 rightCurlyBracketsToken = tokenPrim show update_pos get_token
   where
     get_token RightCurlyBrackets = Just RightCurlyBrackets
     get_token _ = Nothing
 
 -- -> To
+toToken :: Parsec [Token] st Token
 toToken = tokenPrim show update_pos get_token
   where
     get_token To = Just To
@@ -94,6 +101,7 @@ minusToken = tokenPrim show update_pos get_token
     get_token _ = Nothing
 
 -- * Times
+
 timesToken = tokenPrim show update_pos get_token
   where
     get_token Times = Just Times
@@ -112,6 +120,7 @@ integerDividerToken = tokenPrim show update_pos get_token
     get_token _ = Nothing
 
 -- ** Exponent
+
 exponentToken = tokenPrim show update_pos get_token
   where
     get_token Exponent = Just Exponent
@@ -123,13 +132,13 @@ andToken = tokenPrim show update_pos get_token
     get_token And = Just And
     get_token _ = Nothing
 
--- || Or
+-- | | Or
 orToken = tokenPrim show update_pos get_token
   where
     get_token Or = Just Or
     get_token _ = Nothing
-
 -- ^ Xor
+
 xorToken = tokenPrim show update_pos get_token
   where
     get_token Xor = Just Xor
@@ -147,10 +156,22 @@ lessToken = tokenPrim show update_pos get_token
     get_token Less = Just Less
     get_token _ = Nothing
 
+-- <= LessEqual
+lessEqualToken = tokenPrim show update_pos get_token
+  where
+    get_token LessEqual = Just LessEqual
+    get_token _ = Nothing
+
 -- > Greater
 greaterToken = tokenPrim show update_pos get_token
   where
     get_token Greater = Just Greater
+    get_token _ = Nothing
+
+-- >= GreaterEqual
+greaterEqualToken = tokenPrim show update_pos get_token
+  where
+    get_token GreaterEqual = Just GreaterEqual
     get_token _ = Nothing
 
 -- == Equal
@@ -259,9 +280,9 @@ remainingStmts =
 
 stmt :: Parsec [Token] st [Token]
 stmt = do
-      assignTok <- assign
-      semiCol <- semiColonToken
-      return (assignTok ++ [semiCol])
+  assignTok <- assign
+  semiCol <- semiColonToken
+  return (assignTok ++ [semiCol])
 
 assign :: Parsec [Token] st [Token]
 assign = do
@@ -273,9 +294,11 @@ assign = do
 assignVal :: Parsec [Token] st [Token]
 assignVal =
   do
-    valLiteral <- assignValLiteral
-    return [valLiteral]
-    <|> assignValExpression
+    valExpression <- assignValExpression
+    return valExpression
+    <|> do
+      valLiteral <- assignValLiteral
+      return [valLiteral]
 
 assignValLiteral :: Parsec [Token] st Token
 assignValLiteral =
@@ -288,12 +311,94 @@ assignValLiteral =
 
 assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
-    do
-        literalRight <- assignValLiteral
-        plus <- plusToken
-        literalLeft <- assignValLiteral
-        return ([literalRight] ++ [plus] ++ [literalLeft])
+  do
+    expressionRight <- assignValExpression
+    arithmeticOp <- binaryArithmeticOperatorLiteral
+    term <- term
+    return (expressionRight ++ [arithmeticOp] ++ term)
+    <|> do
+      expressionRight <- assignValExpression
+      relationalOp <- binaryRelationalOperatorLiteral
+      expressionLeft <- assignValExpression
+      return (expressionRight ++ [relationalOp] ++ expressionLeft)
+    <|> do
+      notTok <- notToken
+      expression <- assignValExpression
+      return ([notTok] ++ expression)
+    <|> do
+      leftPar <- leftParenthesisToken
+      expression <- assignValExpression
+      rightPar <- rightParenthesisToken
+      return ([leftPar] ++ expression ++ [rightPar])
+    <|> term
+    <|> do
+      idToken <- idToken
+      return [idToken]
+    <|> do
+      assignValLiteral <- assignValLiteral
+      return [assignValLiteral]
 
+-- <|> call
+
+term :: Parsec [Token] st [Token]
+term =
+  do
+    term <- term
+    termOp <- termOperatorLiteral
+    factor <- factor
+    return (term ++ [termOp] ++ factor)
+    <|> factor
+
+termOperatorLiteral :: Parsec [Token] st Token
+termOperatorLiteral =
+  do
+    timesToken
+    <|> dividerToken
+    <|> integerDividerToken
+
+factor :: Parsec [Token] st [Token]
+factor =
+  do
+    exponential <- exponential
+    factorOp <- exponentToken
+    factor <- factor
+    return (exponential ++ [factorOp] ++ factor)
+    <|> exponential
+
+exponential :: Parsec [Token] st [Token]
+exponential =
+  do
+    leftPar <- leftParenthesisToken
+    expression <- assignValExpression
+    rightPar <- rightParenthesisToken
+    return ([leftPar] ++ expression ++ [rightPar])
+    <|> do
+      assignValLiteral <- assignValLiteral
+      return [assignValLiteral]
+    <|> do
+      idToken <- idToken
+      return [idToken]
+
+-- <|> call
+
+binaryArithmeticOperatorLiteral :: Parsec [Token] st Token
+binaryArithmeticOperatorLiteral =
+  do
+    plusToken
+    <|> minusToken
+
+binaryRelationalOperatorLiteral :: Parsec [Token] st Token
+binaryRelationalOperatorLiteral =
+  do
+    andToken
+    <|> orToken
+    <|> xorToken
+    <|> lessToken
+    <|> lessEqualToken
+    <|> greaterToken
+    <|> greaterEqualToken
+    <|> equalToken
+    <|> differentToken
 
 -- invocação do parser para o símbolo de partida
 
@@ -301,6 +406,6 @@ parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_atribuicao_tipos_simples.txt") of
+main = case parser (getTokens "exemplo_atribuicao_por_expressao.txt") of
   Left err -> print err
   Right ans -> print ans

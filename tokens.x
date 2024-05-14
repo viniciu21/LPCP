@@ -34,7 +34,9 @@ tokens :-
     "^"                                       { \s -> Xor } 
     "!"                                       { \s -> Not } 
     "<"                                       { \s -> Less } 
-    ">"                                       { \s -> Greater } 
+    "<="                                       { \s -> LessEqual } 
+    ">"                                       { \s -> Greater }
+    ">="                                       { \s -> GreaterEqual } 
     "=="                                      { \s -> Equal } 
     "!="                                      { \s -> Different } 
     "int"                                     { \s -> Type s } 
@@ -72,47 +74,49 @@ tokens :-
 
 {
 data Token = 
-    Id String                       |
-    Colon                           |
-    SemiColon                       |
-    Comma                           |
-    LeftParenthesis                 |
-    RightParenthesis                |
-    LeftCurlyBrackets               |
-    RightCurlyBrackets              |
-    To                              |
-    Assign                          |
-    Plus                            |
-    Minus                           |
-    Times                           |
-    Divider                         |
-    IntegerDivider                  |
-    Exponent                        |
-    And                             |
-    Or                              |
-    Xor                             |
-    Not                             |
-    Less                            |
-    Greater                         |
-    Equal                           |
-    Different                       |
-    Type String                     |
-    If                              |
-    Elif                            |
-    Else                            |
-    For                             |
-    While                           |
-    Return                          |
-    Declaration                     |
-    EndDeclaration                  |
-    Func                            |
-    EndFunc                         |
-    Main                            |
-    EndMain                         |
-    IntValue Int                         |
-    FloatValue Float                     |
-    StringValue String                   |
-    CharValue String                     |
+    Id String                               |
+    Colon                                   |
+    SemiColon                               |
+    Comma                                   |
+    LeftParenthesis                         |
+    RightParenthesis                        |
+    LeftCurlyBrackets                       |
+    RightCurlyBrackets                      |
+    To                                      |
+    Assign                                  |
+    Plus                                    |
+    Minus                                   |
+    Times                                   |
+    Divider                                 |
+    IntegerDivider                          |
+    Exponent                                |
+    And                                     |
+    Or                                      |
+    Xor                                     |
+    Not                                     |
+    Less                                    |
+    LessEqual                               |
+    Greater                                 |
+    GreaterEqual                            |
+    Equal                                   |
+    Different                               |
+    Type String                             |
+    If                                      |
+    Elif                                    |
+    Else                                    |
+    For                                     |
+    While                                   |
+    Return                                  |
+    Declaration                             |
+    EndDeclaration                          |
+    Func                                    |
+    EndFunc                                 |
+    Main                                    |
+    EndMain                                 |
+    IntValue Int                            |
+    FloatValue Float                        |
+    StringValue String                      |
+    CharValue String                        |
     BoolValue Bool                  
     deriving (Eq,Show)
 

@@ -45,22 +45,26 @@
 			  | <expression> '^' <expression>
 				| '!' <expression>
 				| <expression> '<' <expression>
+				| <expression> '<=' <expression>
 				| <expression> '>' <expression> 
+				| <expression> '>=' <expression> 
 				| <expression> '==' <expression>
 				| <expression> '!=' <expression>
 				| ID
 				| <call> 
 				| <value>
+				| <term>
 				| '(' <expression> ')'
 
 <term> -> <term> * <factor>
 		| <term> / <factor>
 		| <term> // <factor>
+		| <factor>
 <factor> -> <exponential> ** <factor>
           | <exponential>
-<exponential> -> '(' <expression> ')' | ID | <call>
+<exponential> -> '(' <expression> ')' | ID | <call> | <value>
 
-<for> -> FOR '(' <atr> ';' <expression> ';' <atr> ') ':' <stmts> END_FOR
+<for> -> FOR '(' <assign> ';' <expression> ';' <assign> ') ':' <stmts> END_FOR
 <if> -> IF '('<expression')' ':' <stmts> <elifs> <else> END_IF
 <elifs> -> <elif>
 		| <elif> <elifs>
