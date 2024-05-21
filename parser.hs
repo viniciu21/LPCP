@@ -3,6 +3,7 @@
 {-# HLINT ignore "Use :" #-}
 module Main (main) where
 
+import Control.Monad.Cont (MonadIO (liftIO))
 import Data.Binary.Get (remaining)
 import Text.Parsec
 import Tokens
@@ -313,16 +314,17 @@ assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
   do
     arithmeticExpression
-    <|> relationalExpression
-    <|> notExpression
-    <|> parenthesisExpression
-    <|> term
-    <|> do
-      idToken' <- idToken
-      return [idToken']
-    <|> do
-      valueLiteral' <- valueLiteral
-      return [valueLiteral']
+
+-- <|> relationalExpression
+-- <|> notExpression
+-- <|> parenthesisExpression
+-- <|> term
+-- <|> do
+--   idToken' <- idToken
+--   return [idToken']
+-- <|> do
+--   valueLiteral' <- valueLiteral
+--   return [valueLiteral']
 
 -- <|> call
 
@@ -336,10 +338,11 @@ arithmeticExpression = do
 arithmeticExpressionRemaining :: Parsec [Token] st [Token]
 arithmeticExpressionRemaining =
   do
-    arithmeticOp <- binaryArithmeticOperatorLiteral
-    expressionLeft <- arithmeticExpressionRemaining
-    return ([arithmeticOp] ++ expressionLeft)
-    <|> term
+    -- arithmeticOp <- binaryArithmeticOperatorLiteral
+    -- expressionLeft <- arithmeticExpressionRemaining
+    -- return ([arithmeticOp] ++ expressionLeft)
+    -- <|>
+    term
 
 relationalExpression :: Parsec [Token] st [Token]
 relationalExpression = do
@@ -363,12 +366,16 @@ parenthesisExpression = do
 
 term :: Parsec [Token] st [Token]
 term =
-  do
-    factor <- factor
-    termOp <- termOperatorLiteral
-    termAssoc <- termRemaining
-    return (factor ++ [termOp] ++ termAssoc)
+  try
+    termExpression
     <|> factor
+
+termExpression :: Parsec [Token] st [Token]
+termExpression = do
+  factor <- factor
+  termOp <- termOperatorLiteral
+  termAssoc <- termRemaining
+  return (factor ++ [termOp] ++ termAssoc)
 
 termRemaining :: Parsec [Token] st [Token]
 termRemaining =
@@ -387,12 +394,16 @@ termOperatorLiteral =
 
 factor :: Parsec [Token] st [Token]
 factor =
-  do
-    exponential <- exponential
-    factorOp <- exponentToken
-    factor <- factorRemaining
-    return (exponential ++ [factorOp] ++ factor)
+  try
+    factorExpression
     <|> exponential
+
+factorExpression :: Parsec [Token] st [Token]
+factorExpression = do
+  exponential <- exponential
+  factorOp <- exponentToken
+  factor <- factorRemaining
+  return (factor ++ [factorOp] ++ exponential)
 
 factorRemaining :: Parsec [Token] st [Token]
 factorRemaining =
