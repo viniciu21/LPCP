@@ -1,9 +1,7 @@
 declaration:
-    a: int;
     b: int;
 end_declaration
 
 main:
-    a = 10;
     b = 10 + 5;
 end_main

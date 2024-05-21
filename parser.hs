@@ -13,6 +13,7 @@ declarationToken = tokenPrim show update_pos get_token -- declaration
     get_token Declaration = Just Declaration
     get_token _ = Nothing
 
+endDeclarationToken :: Parsec [Token] st Token
 endDeclarationToken = tokenPrim show update_pos get_token -- end_declaration
   where
     get_token EndDeclaration = Just EndDeclaration
@@ -274,7 +275,7 @@ stmts = do
 remainingStmts :: Parsec [Token] st [Token]
 remainingStmts =
   ( do
-      stmts -- Recursão em stms dando loop
+      stmts
   )
     <|> return []
 
@@ -294,15 +295,14 @@ assign = do
 assignVal :: Parsec [Token] st [Token]
 assignVal =
   do
-    valExpression <- assignValExpression
-    return valExpression
+    assignValExpression
     <|> do
-      valLiteral <- assignValLiteral
+      valLiteral <- valueLiteral
       return [valLiteral]
 
-assignValLiteral :: Parsec [Token] st Token
-assignValLiteral =
-  do
+valueLiteral :: Parsec [Token] st Token
+valueLiteral =
+  try
     intValToken
     <|> floatValToken
     <|> charValToken
@@ -312,41 +312,70 @@ assignValLiteral =
 assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
   do
-    expressionRight <- assignValExpression
-    arithmeticOp <- binaryArithmeticOperatorLiteral
-    term <- term
-    return (expressionRight ++ [arithmeticOp] ++ term)
-    <|> do
-      expressionRight <- assignValExpression
-      relationalOp <- binaryRelationalOperatorLiteral
-      expressionLeft <- assignValExpression
-      return (expressionRight ++ [relationalOp] ++ expressionLeft)
-    <|> do
-      notTok <- notToken
-      expression <- assignValExpression
-      return ([notTok] ++ expression)
-    <|> do
-      leftPar <- leftParenthesisToken
-      expression <- assignValExpression
-      rightPar <- rightParenthesisToken
-      return ([leftPar] ++ expression ++ [rightPar])
+    arithmeticExpression
+    <|> relationalExpression
+    <|> notExpression
+    <|> parenthesisExpression
     <|> term
     <|> do
-      idToken <- idToken
-      return [idToken]
+      idToken' <- idToken
+      return [idToken']
     <|> do
-      assignValLiteral <- assignValLiteral
-      return [assignValLiteral]
+      valueLiteral' <- valueLiteral
+      return [valueLiteral']
 
 -- <|> call
+
+arithmeticExpression :: Parsec [Token] st [Token]
+arithmeticExpression = do
+  term' <- term
+  arithmeticOp <- binaryArithmeticOperatorLiteral
+  expressionLeft <- arithmeticExpressionRemaining
+  return (term' ++ [arithmeticOp] ++ expressionLeft)
+
+arithmeticExpressionRemaining :: Parsec [Token] st [Token]
+arithmeticExpressionRemaining =
+  do
+    arithmeticOp <- binaryArithmeticOperatorLiteral
+    expressionLeft <- arithmeticExpressionRemaining
+    return ([arithmeticOp] ++ expressionLeft)
+    <|> term
+
+relationalExpression :: Parsec [Token] st [Token]
+relationalExpression = do
+  expressionRight <- assignValExpression
+  relationalOp <- binaryRelationalOperatorLiteral
+  expressionLeft <- assignValExpression
+  return (expressionRight ++ [relationalOp] ++ expressionLeft)
+
+notExpression :: Parsec [Token] st [Token]
+notExpression = do
+  notTok <- notToken
+  expression <- assignValExpression
+  return ([notTok] ++ expression)
+
+parenthesisExpression :: Parsec [Token] st [Token]
+parenthesisExpression = do
+  leftPar <- leftParenthesisToken
+  expression <- assignValExpression
+  rightPar <- rightParenthesisToken
+  return ([leftPar] ++ expression ++ [rightPar])
 
 term :: Parsec [Token] st [Token]
 term =
   do
-    term <- term
-    termOp <- termOperatorLiteral
     factor <- factor
-    return (term ++ [termOp] ++ factor)
+    termOp <- termOperatorLiteral
+    termAssoc <- termRemaining
+    return (factor ++ [termOp] ++ termAssoc)
+    <|> factor
+
+termRemaining :: Parsec [Token] st [Token]
+termRemaining =
+  do
+    termOp <- termOperatorLiteral
+    term <- termRemaining
+    return ([termOp] ++ term)
     <|> factor
 
 termOperatorLiteral :: Parsec [Token] st Token
@@ -361,8 +390,16 @@ factor =
   do
     exponential <- exponential
     factorOp <- exponentToken
-    factor <- factor
+    factor <- factorRemaining
     return (exponential ++ [factorOp] ++ factor)
+    <|> exponential
+
+factorRemaining :: Parsec [Token] st [Token]
+factorRemaining =
+  do
+    factorOp <- exponentToken
+    factor <- factorRemaining
+    return ([factorOp] ++ factor)
     <|> exponential
 
 exponential :: Parsec [Token] st [Token]
@@ -373,8 +410,8 @@ exponential =
     rightPar <- rightParenthesisToken
     return ([leftPar] ++ expression ++ [rightPar])
     <|> do
-      assignValLiteral <- assignValLiteral
-      return [assignValLiteral]
+      valueLiteral' <- valueLiteral
+      return [valueLiteral']
     <|> do
       idToken <- idToken
       return [idToken]
