@@ -38,8 +38,8 @@
 <assign> -> ID '=' <value> 
 	   | ID '=' <expression>
 
-<expression> -> <expression> '+' <term> 
-			  | <expression> '-' <term>
+<expression> -> <term>  '+' <expression>
+			  | <term> '-' <expression>
 			  | <expression> '&&' <expression> 
 			  | <expression> '||' <expression> 
 			  | <expression> '^' <expression>

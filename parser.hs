@@ -295,15 +295,13 @@ assign = do
 
 assignVal :: Parsec [Token] st [Token]
 assignVal =
-  do
+  try
     assignValExpression
-    <|> do
-      valLiteral <- valueLiteral
-      return [valLiteral]
+    <|> valueLiteralExpression
 
 valueLiteral :: Parsec [Token] st Token
 valueLiteral =
-  try
+  do
     intValToken
     <|> floatValToken
     <|> charValToken
@@ -312,18 +310,13 @@ valueLiteral =
 
 assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
-  do
+  try
     arithmeticExpression
-    <|> relationalExpression
+    -- <|> relationalExpression
     <|> notExpression
     <|> parenthesisExpression
+    <|> idTokenExpression
     <|> term
-    <|> do
-      idToken' <- idToken
-      return [idToken']
-    <|> do
-      valueLiteral' <- valueLiteral
-      return [valueLiteral']
 
 -- <|> call
 
@@ -342,12 +335,21 @@ arithmeticExpressionRemaining =
     return ([arithmeticOp] ++ expressionLeft)
     <|> term
 
+-- Como faz essa desgraça?
 relationalExpression :: Parsec [Token] st [Token]
 relationalExpression = do
   expressionRight <- assignValExpression
   relationalOp <- binaryRelationalOperatorLiteral
-  expressionLeft <- assignValExpression
+  expressionLeft <- relationalExpressionRemaining
   return (expressionRight ++ [relationalOp] ++ expressionLeft)
+
+relationalExpressionRemaining :: Parsec [Token] st [Token]
+relationalExpressionRemaining =
+  do
+    relationalOp <- binaryRelationalOperatorLiteral
+    expressionLeft <- relationalExpressionRemaining
+    return ([relationalOp] ++ expressionLeft)
+    <|> assignValExpression
 
 notExpression :: Parsec [Token] st [Token]
 notExpression = do
@@ -361,6 +363,16 @@ parenthesisExpression = do
   expression <- assignValExpression
   rightPar <- rightParenthesisToken
   return ([leftPar] ++ expression ++ [rightPar])
+
+idTokenExpression :: Parsec [Token] st [Token]
+idTokenExpression = do
+  idToken' <- idToken
+  return [idToken']
+
+valueLiteralExpression :: Parsec [Token] st [Token]
+valueLiteralExpression = do
+  valueLiteral' <- valueLiteral
+  return [valueLiteral']
 
 term :: Parsec [Token] st [Token]
 term =
@@ -413,17 +425,10 @@ factorRemaining =
 
 exponential :: Parsec [Token] st [Token]
 exponential =
-  do
-    leftPar <- leftParenthesisToken
-    expression <- assignValExpression
-    rightPar <- rightParenthesisToken
-    return ([leftPar] ++ expression ++ [rightPar])
-    <|> do
-      valueLiteral' <- valueLiteral
-      return [valueLiteral']
-    <|> do
-      idToken <- idToken
-      return [idToken]
+  try
+    parenthesisExpression
+    <|> valueLiteralExpression
+    <|> idTokenExpression
 
 -- <|> call
 
@@ -452,6 +457,6 @@ parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_atribuicao_por_expressao.txt") of
+main = case parser (getTokens "exemplo_atribuicoes_por_expressoes.txt") of
   Left err -> print err
   Right ans -> print ans
