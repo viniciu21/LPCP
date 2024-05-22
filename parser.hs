@@ -314,17 +314,16 @@ assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
   do
     arithmeticExpression
-
--- <|> relationalExpression
--- <|> notExpression
--- <|> parenthesisExpression
--- <|> term
--- <|> do
---   idToken' <- idToken
---   return [idToken']
--- <|> do
---   valueLiteral' <- valueLiteral
---   return [valueLiteral']
+    <|> relationalExpression
+    <|> notExpression
+    <|> parenthesisExpression
+    <|> term
+    <|> do
+      idToken' <- idToken
+      return [idToken']
+    <|> do
+      valueLiteral' <- valueLiteral
+      return [valueLiteral']
 
 -- <|> call
 
@@ -338,11 +337,10 @@ arithmeticExpression = do
 arithmeticExpressionRemaining :: Parsec [Token] st [Token]
 arithmeticExpressionRemaining =
   do
-    -- arithmeticOp <- binaryArithmeticOperatorLiteral
-    -- expressionLeft <- arithmeticExpressionRemaining
-    -- return ([arithmeticOp] ++ expressionLeft)
-    -- <|>
-    term
+    arithmeticOp <- binaryArithmeticOperatorLiteral
+    expressionLeft <- arithmeticExpressionRemaining
+    return ([arithmeticOp] ++ expressionLeft)
+    <|> term
 
 relationalExpression :: Parsec [Token] st [Token]
 relationalExpression = do
