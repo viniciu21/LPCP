@@ -457,6 +457,6 @@ parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_atribuicoes_por_expressoes.txt") of
+main = case parser (getTokens "exemplo_atribuicao_por_expressao.txt") of
   Left err -> print err
   Right ans -> print ans
