@@ -38,23 +38,27 @@
 <assign> -> ID '=' <value> 
 	   | ID '=' <expression>
 
-<expression> -> <term>  '+' <expression>
-			  | <term> '-' <expression>
-			  | <expression> '&&' <expression> 
-			  | <expression> '||' <expression> 
-			  | <expression> '^' <expression>
+<expression> ->   <expression> '&&' <expression> 
+				| <expression> '||' <expression> 
+				| <expression> '^' <expression>
 				| '!' <expression>
-				| <expression> '<' <expression>
-				| <expression> '<=' <expression>
-				| <expression> '>' <expression> 
-				| <expression> '>=' <expression> 
-				| <expression> '==' <expression>
-				| <expression> '!=' <expression>
 				| ID
+				| <relationalExpression>
 				| <call> 
 				| <value>
-				| <term>
+				| <plusMinus>
 				| '(' <expression> ')'
+
+<relationalExpression> -> <arithmeticExpression> '<'  <arithmeticExpression>
+						| <arithmeticExpression> '<=' <arithmeticExpression>
+						| <arithmeticExpression> '>'  <arithmeticExpression> 
+						| <arithmeticExpression> '>=' <arithmeticExpression> 
+						| <arithmeticExpression> '==' <arithmeticExpression>
+						| <arithmeticExpression> '!=' <arithmeticExpression>
+
+<arithmeticExpression> -> <term> '+' <expression>
+						| <term> '-' <expression>
+						| <term>
 
 <term> -> <factor> * <term>
 		| <factor> / <term>

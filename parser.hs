@@ -311,17 +311,22 @@ valueLiteral =
 assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
   try
-    arithmeticExpression
-    -- <|> relationalExpression
-    <|> notExpression
+    relationalExpression
+    <|> arithmeticExpression
+    <|> logicalExpression
     <|> parenthesisExpression
     <|> idTokenExpression
-    <|> term
 
 -- <|> call
 
 arithmeticExpression :: Parsec [Token] st [Token]
-arithmeticExpression = do
+arithmeticExpression =
+  try
+    plusMinusExpression
+    <|> term
+
+plusMinusExpression :: Parsec [Token] st [Token]
+plusMinusExpression = do
   term' <- term
   arithmeticOp <- binaryArithmeticOperatorLiteral
   expressionLeft <- arithmeticExpressionRemaining
@@ -335,27 +340,49 @@ arithmeticExpressionRemaining =
     return ([arithmeticOp] ++ expressionLeft)
     <|> term
 
--- Como faz essa desgraça?
 relationalExpression :: Parsec [Token] st [Token]
 relationalExpression = do
-  expressionRight <- assignValExpression
+  arithmeticExpressionRight <- arithmeticExpression
   relationalOp <- binaryRelationalOperatorLiteral
-  expressionLeft <- relationalExpressionRemaining
-  return (expressionRight ++ [relationalOp] ++ expressionLeft)
+  arithmeticExpressionLeft <- arithmeticExpression
+  return (arithmeticExpressionRight ++ [relationalOp] ++ arithmeticExpressionLeft)
 
-relationalExpressionRemaining :: Parsec [Token] st [Token]
-relationalExpressionRemaining =
-  do
-    relationalOp <- binaryRelationalOperatorLiteral
-    expressionLeft <- relationalExpressionRemaining
-    return ([relationalOp] ++ expressionLeft)
-    <|> assignValExpression
+logicalExpression :: Parsec [Token] st [Token]
+logicalExpression =
+  try
+    binaryLogicalExpression
+    <|> notExpression
+
+binaryLogicalExpression :: Parsec [Token] st [Token]
+binaryLogicalExpression = do
+  firstPar <- leftParenthesisToken
+  relExpLeft <- relationalExpression
+  secondPar <- rightParenthesisToken
+  logicalLiteral <- binaryLogicalOperatorLiteral
+  thirdPar <- leftParenthesisToken
+  relExpRight <- relationalExpression
+  forthPar <- rightParenthesisToken
+  return ([firstPar] ++ relExpLeft ++ [secondPar] ++ [logicalLiteral] ++ [thirdPar] ++ relExpRight ++ [forthPar])
 
 notExpression :: Parsec [Token] st [Token]
-notExpression = do
-  notTok <- notToken
-  expression <- assignValExpression
-  return ([notTok] ++ expression)
+notExpression =
+  try
+    notBoolValExpression
+    <|> notParenthesisExpression
+
+notBoolValExpression :: Parsec [Token] st [Token]
+notBoolValExpression =
+  do
+    notTok <- notToken
+    boolValue <- boolValToken
+    return ([notTok] ++ [boolValue])
+
+notParenthesisExpression :: Parsec [Token] st [Token]
+notParenthesisExpression =
+  do
+    notTok <- notToken
+    expression <- parenthesisExpression
+    return ([notTok] ++ expression)
 
 parenthesisExpression :: Parsec [Token] st [Token]
 parenthesisExpression = do
@@ -434,29 +461,31 @@ exponential =
 
 binaryArithmeticOperatorLiteral :: Parsec [Token] st Token
 binaryArithmeticOperatorLiteral =
-  do
+  try
     plusToken
     <|> minusToken
 
 binaryRelationalOperatorLiteral :: Parsec [Token] st Token
 binaryRelationalOperatorLiteral =
-  do
-    andToken
-    <|> orToken
-    <|> xorToken
-    <|> lessToken
+  try
+    lessToken
     <|> lessEqualToken
     <|> greaterToken
     <|> greaterEqualToken
     <|> equalToken
     <|> differentToken
 
--- invocação do parser para o símbolo de partida
+binaryLogicalOperatorLiteral :: Parsec [Token] st Token
+binaryLogicalOperatorLiteral =
+  try
+    andToken
+    <|> orToken
+    <|> xorToken
 
 parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_atribuicao_por_expressao.txt") of
+main = case parser (getTokens "exemplo_atribuicoes_por_expressoes.txt") of
   Left err -> print err
   Right ans -> print ans
