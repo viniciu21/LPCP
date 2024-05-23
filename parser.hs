@@ -342,10 +342,16 @@ arithmeticExpressionRemaining =
 
 relationalExpression :: Parsec [Token] st [Token]
 relationalExpression = do
-  arithmeticExpressionRight <- arithmeticExpression
+  arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
-  arithmeticExpressionLeft <- arithmeticExpression
+  arithmeticExpressionLeft <- arithOrParentExpression
   return (arithmeticExpressionRight ++ [relationalOp] ++ arithmeticExpressionLeft)
+
+arithOrParentExpression :: Parsec [Token] st [Token]
+arithOrParentExpression =
+  try
+    parenthesisExpression
+    <|> arithmeticExpression
 
 logicalExpression :: Parsec [Token] st [Token]
 logicalExpression =
@@ -453,8 +459,8 @@ factorRemaining =
 exponential :: Parsec [Token] st [Token]
 exponential =
   try
-    parenthesisExpression
-    <|> valueLiteralExpression
+    -- parenthesisExpression
+    valueLiteralExpression
     <|> idTokenExpression
 
 -- <|> call
