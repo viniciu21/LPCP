@@ -459,7 +459,6 @@ factorRemaining =
 exponential :: Parsec [Token] st [Token]
 exponential =
   try
-    -- parenthesisExpression
     valueLiteralExpression
     <|> idTokenExpression
 

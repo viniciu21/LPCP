@@ -33,45 +33,48 @@
 		| <stmt> ; <stmts> 
 <stmt> -> <decls> | <for> | <while> | <if> | <assign> | <rtn>
 
-<rtn> -> "return" <expression> ";"
+<rtn> -> "return" <assignValExpression> ";"
 
 <assign> -> ID '=' <value> 
-	   | ID '=' <expression>
+	   | ID '=' <assignValExpression>
 
-<expression> ->   <expression> '&&' <expression> 
-				| <expression> '||' <expression> 
-				| <expression> '^' <expression>
-				| '!' <expression>
-				| ID
-				| <relationalExpression>
+<assignValExpression> -> <relationalExpression>
+				| <arithmeticExpression>
+				| <logicalExpression>
+				| <parenthesisExpression>
 				| <call> 
-				| <value>
-				| <plusMinus>
-				| '(' <expression> ')'
+				| ID
 
-<relationalExpression> -> <arithmeticExpression> '<'  <arithmeticExpression>
-						| <arithmeticExpression> '<=' <arithmeticExpression>
-						| <arithmeticExpression> '>'  <arithmeticExpression> 
-						| <arithmeticExpression> '>=' <arithmeticExpression> 
-						| <arithmeticExpression> '==' <arithmeticExpression>
-						| <arithmeticExpression> '!=' <arithmeticExpression>
+<parenthesisExpression> -> '(' <assignValExpression> ')'
 
-<arithmeticExpression> -> <term> '+' <expression>
-						| <term> '-' <expression>
+<logicalExpression> -> '(' <relationalExpression> ')' '&&' '(' <relationalExpression> ')' 
+					| '(' <relationalExpression> ')' '||' '(' <relationalExpression> ')'
+					| '!' (BOOL | <parenthesisExpression>)
+
+<relationalExpression> -> (<arithmeticExpression> | <parenthesisExpression>) '<'  (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '<=' (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '>'  (<arithmeticExpression> | <parenthesisExpression>) 
+						| (<arithmeticExpression> | <parenthesisExpression>) '>=' (<arithmeticExpression> | <parenthesisExpression>) 
+						| (<arithmeticExpression> | <parenthesisExpression>) '==' (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '!=' (<arithmeticExpression> | <parenthesisExpression>)
+
+<arithmeticExpression> -> <term> '+' <assignValExpression>
+						| <term> '-' <assignValExpression>
 						| <term>
 
-<term> -> <factor> * <term>
-		| <factor> / <term>
-		| <factor> // <term>
+<term> -> <factor> '*' <term>
+		| <factor> '/' <term>
+		| <factor> '//' <term>
 		| <factor>
-<factor> -> <exponential> ** <factor>
-          | <exponential>
-<exponential> -> '(' <expression> ')' | ID | <call> | <value>
 
-<for> -> FOR '(' <assign> ';' <expression> ';' <assign> ') ':' <stmts> END_FOR
-<if> -> IF '('<expression')' ':' <stmts> <elifs> <else> END_IF
+<factor> -> <exponential> '**' <factor>
+          | <exponential>
+<exponential> -> ID | <call> | <value>
+
+<for> -> FOR '(' <assign> ';' <assignValExpression> ';' <assign> ') ':' <stmts> END_FOR
+<if> -> IF '('<assignValExpression')' ':' <stmts> <elifs> <else> END_IF
 <elifs> -> <elif>
 		| <elif> <elifs>
-<elif> -> ELIF '(' <expression> ')' ':' <stmts>
+<elif> -> ELIF '(' <assignValExpression> ')' ':' <stmts>
 <else> -> ELSE ':' <stmts>
-<while> -> WHILE '(' <expression> ')' ':' <stmts> END_WHILE
+<while> -> WHILE '(' <assignValExpression> ')' ':' <stmts> END_WHILE
