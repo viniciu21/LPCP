@@ -52,6 +52,7 @@ tokens :-
     "tree"                                    { \s -> Type s } 
     "n-array"                                 { \s -> Type s } 
     "if"                                      { \s -> If } 
+    "end_if"                                  { \s -> EndIf }
     "elif"                                    { \s -> Elif } 
     "else"                                    { \s -> Else } 
     "for"                                     { \s -> For } 
@@ -102,6 +103,7 @@ data Token =
     Different                               |
     Type String                             |
     If                                      |
+    EndIf                                   |  
     Elif                                    |
     Else                                    |
     For                                     |

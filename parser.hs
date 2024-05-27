@@ -8,7 +8,7 @@ import Data.Binary.Get (remaining)
 import Text.Parsec
 import Tokens
 
------------------------------ Seções -----------------------------
+----------------------------- Blocos -----------------------------
 declarationToken = tokenPrim show update_pos get_token -- declaration
   where
     get_token Declaration = Just Declaration
@@ -28,6 +28,28 @@ mainToken = tokenPrim show update_pos get_token -- main
 endMainToken = tokenPrim show update_pos get_token -- end_main
   where
     get_token EndMain = Just EndMain
+    get_token _ = Nothing
+
+ifToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token If = Just If
+    get_token _ = Nothing
+
+endifToken = tokenPrim show update_pos get_token -- endIf
+  where
+    get_token EndIf = Just EndIf
+    get_token _ = Nothing
+
+elifToken :: Parsec [Token] st Token
+elifToken = tokenPrim show update_pos get_token -- elif
+  where
+    get_token Elif = Just Elif
+    get_token _ = Nothing
+
+elseToken :: Parsec [Token] st Token
+elseToken = tokenPrim show update_pos get_token -- else
+  where
+    get_token Else = Just Else
     get_token _ = Nothing
 
 ----------------------------- Simbolos -----------------------------
@@ -246,6 +268,8 @@ program = do
   eof
   return ([decl] ++ [colonD] ++ decls ++ [endDecl] ++ [main] ++ [colonM] ++ stmts ++ [endMain])
 
+----------------------------- Declarações -----------------------------
+
 decls :: Parsec [Token] st [Token]
 decls = do
   first <- decl
@@ -267,6 +291,8 @@ decl = do
   semiCol <- semiColonToken
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
+----------------------------- Code -----------------------------
+
 stmts :: Parsec [Token] st [Token]
 stmts = do
   first <- stmt
@@ -281,7 +307,27 @@ remainingStmts =
     <|> return []
 
 stmt :: Parsec [Token] st [Token]
-stmt = do
+stmt =
+  try
+    assignStmt
+    <|> ifStmt
+
+-- assignTok <- assign
+-- semiCol <- semiColonToken
+-- return (assignTok ++ [semiCol])
+
+ifStmt :: Parsec [Token] st [Token]
+ifStmt = do
+  ifLiteral <- ifToken
+  expression <- ifParenthesisExpression
+  colonLiteral <- colonToken
+  stmtsBlock <- stmts
+  endIfLiteral <- endifToken
+  semiCol <- semiColonToken
+  return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol])
+
+assignStmt :: Parsec [Token] st [Token]
+assignStmt = do
   assignTok <- assign
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
@@ -307,6 +353,8 @@ valueLiteral =
     <|> charValToken
     <|> stringValToken
     <|> boolValToken
+
+----------------------------- Expressões -----------------------------
 
 assignValExpression :: Parsec [Token] st [Token]
 assignValExpression =
@@ -390,10 +438,23 @@ notParenthesisExpression =
     expression <- parenthesisExpression
     return ([notTok] ++ expression)
 
+relatOrLogicExpression :: Parsec [Token] st [Token]
+relatOrLogicExpression =
+  try
+    relationalExpression
+    <|> logicalExpression
+
 parenthesisExpression :: Parsec [Token] st [Token]
 parenthesisExpression = do
   leftPar <- leftParenthesisToken
   expression <- assignValExpression
+  rightPar <- rightParenthesisToken
+  return ([leftPar] ++ expression ++ [rightPar])
+
+ifParenthesisExpression :: Parsec [Token] st [Token]
+ifParenthesisExpression = do
+  leftPar <- leftParenthesisToken
+  expression <- relatOrLogicExpression
   rightPar <- rightParenthesisToken
   return ([leftPar] ++ expression ++ [rightPar])
 
@@ -464,6 +525,8 @@ exponential =
 
 -- <|> call
 
+----------------------------- Parsec de literais -----------------------------
+
 binaryArithmeticOperatorLiteral :: Parsec [Token] st Token
 binaryArithmeticOperatorLiteral =
   try
@@ -491,6 +554,6 @@ parser :: [Token] -> Either ParseError [Token]
 parser tokens = runParser program () "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_atribuicoes_por_expressoes.txt") of
+main = case parser (getTokens "exemplo_if_stmts.txt") of
   Left err -> print err
   Right ans -> print ans

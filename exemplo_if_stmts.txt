@@ -1,0 +1,10 @@
+declaration:
+    a: int;
+    b: int;
+end_declaration
+
+main:
+    if(5 < 10 + 5):
+        a = 5;
+    end_if;
+end_main
