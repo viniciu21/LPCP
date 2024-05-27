@@ -322,9 +322,32 @@ ifStmt = do
   expression <- ifParenthesisExpression
   colonLiteral <- colonToken
   stmtsBlock <- stmts
+  elifStmt' <- elifStmt
+  elseStmt' <- elseStmt
   endIfLiteral <- endifToken
   semiCol <- semiColonToken
-  return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol])
+  return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ elifStmt' ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
+
+elifStmt :: Parsec [Token] st [Token]
+elifStmt =
+  ( do
+      elifLiteral <- elifToken
+      expression <- ifParenthesisExpression
+      colonLiteral <- colonToken
+      stmtsBlock <- stmts
+      return ([elifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock)
+  )
+    <|> return []
+
+elseStmt :: Parsec [Token] st [Token]
+elseStmt =
+  ( do
+      elseLiteral <- elseToken
+      colonLiteral <- colonToken
+      stmtsBlock <- stmts
+      return ([elseLiteral] ++ [colonLiteral] ++ stmtsBlock)
+  )
+    <|> return []
 
 assignStmt :: Parsec [Token] st [Token]
 assignStmt = do
