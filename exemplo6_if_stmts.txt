@@ -1,0 +1,15 @@
+declaration:
+    a: int;
+    b: int;
+end_declaration
+
+main:
+    if(5 < 10 + 5):
+        a = 5;
+    elif(10 > 5):
+        b = 10;
+    else:
+        a = 15;
+        b = 15;
+    end_if;
+end_main

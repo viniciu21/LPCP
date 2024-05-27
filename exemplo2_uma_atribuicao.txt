@@ -1,0 +1,7 @@
+declaration:
+    a: int;
+end_declaration
+
+main:
+    a = 10;
+end_main

@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use :" #-}
+{-# HLINT ignore "Redundant return" #-}
 module Main (main) where
 
 import Control.Monad.IO.Class
@@ -30,11 +31,13 @@ endMainToken = tokenPrim show update_pos get_token -- end_main
     get_token (EndMain position) = Just (EndMain position)
     get_token _ = Nothing
 
+ifToken :: ParsecT [Token] [(Token, Token)] IO Token
 ifToken = tokenPrim show update_pos get_token -- if
   where
     get_token (If position) = Just (If position)
     get_token _ = Nothing
 
+endifToken :: ParsecT [Token] [(Token, Token)] IO Token
 endifToken = tokenPrim show update_pos get_token -- endIf
   where
     get_token (EndIf position) = Just (EndIf position)
@@ -165,8 +168,9 @@ orToken = tokenPrim show update_pos get_token
   where
     get_token (Or position) = Just (Or position)
     get_token _ = Nothing
--- ^ Xor
 
+-- ^ Xor
+xorToken :: ParsecT [Token] [(Token, Token)] IO Token
 xorToken = tokenPrim show update_pos get_token
   where
     get_token (Xor position) = Just (Xor position)
@@ -321,30 +325,31 @@ stmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 stmt =
   try
     assignStmt
-    <|> ifStmt
 
-ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
-ifStmt = do
-  ifLiteral <- ifToken
-  expression <- ifParenthesisExpression
-  colonLiteral <- colonToken
-  stmtsBlock <- stmts
-  elifStmt' <- elifStmt
-  elseStmt' <- elseStmt
-  endIfLiteral <- endifToken
-  semiCol <- semiColonToken
-  return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ elifStmt' ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
+-- <|> ifStmt
 
-elifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
-elifStmt =
-  ( do
-      elifLiteral <- elifToken
-      expression <- ifParenthesisExpression
-      colonLiteral <- colonToken
-      stmtsBlock <- stmts
-      return ([elifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock)
-  )
-    <|> return []
+-- ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+-- ifStmt = do
+--   ifLiteral <- ifToken
+--   expression <- ifParenthesisExpression
+--   colonLiteral <- colonToken
+--   stmtsBlock <- stmts
+--   elifStmt' <- elifStmt
+--   elseStmt' <- elseStmt
+--   endIfLiteral <- endifToken
+--   semiCol <- semiColonToken
+--   return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ elifStmt' ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
+
+-- elifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+-- elifStmt =
+--   ( do
+--       elifLiteral <- elifToken
+--       expression <- ifParenthesisExpression
+--       colonLiteral <- colonToken
+--       stmtsBlock <- stmts
+--       return ([elifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock)
+--   )
+--     <|> return []
 
 elseStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 elseStmt =
@@ -367,9 +372,16 @@ assign = do
   id <- idToken
   assignSym <- assignToken
   value <- assignVal
-  return (id : assignSym : value)
+  state <- getState
+  if not (compatible (getType id state) value)
+    then fail "type mismatch"
+    else do
+      updateState (symtableUpdate (id, value))
+      s <- getState
+      liftIO (print s)
+      return (id : assignSym : [value])
 
-assignVal :: ParsecT [Token] [(Token, Token)] IO [Token]
+assignVal :: ParsecT [Token] [(Token, Token)] IO Token
 assignVal =
   try
     assignValExpression
@@ -386,7 +398,7 @@ valueLiteral =
 
 ----------------------------- Expressões -----------------------------
 
-assignValExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
+assignValExpression :: ParsecT [Token] [(Token, Token)] IO Token
 assignValExpression =
   try
     relationalExpression
@@ -397,47 +409,52 @@ assignValExpression =
 
 -- <|> call
 
-arithmeticExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
+arithmeticExpression :: ParsecT [Token] [(Token, Token)] IO Token
 arithmeticExpression =
   try
     plusMinusExpression
     <|> term
 
-plusMinusExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+-- + | - 
+plusMinusExpression :: ParsecT [Token] [(Token, Token)] IO Token
 plusMinusExpression = do
   term' <- term
-  arithmeticOp <- binaryArithmeticOperatorLiteral
-  expressionLeft <- arithmeticExpressionRemaining
-  return (term' ++ [arithmeticOp] ++ expressionLeft)
+  result <- arithmeticExpressionRemaining term'
+  return result
 
-arithmeticExpressionRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
-arithmeticExpressionRemaining =
+arithmeticExpressionRemaining :: Token -> ParsecT [Token] [(Token, Token)] IO Token
+arithmeticExpressionRemaining termIn =
   do
     arithmeticOp <- binaryArithmeticOperatorLiteral
-    expressionLeft <- arithmeticExpressionRemaining
-    return ([arithmeticOp] ++ expressionLeft)
-    <|> term
+    term' <- term
+    result <- arithmeticExpressionRemaining (binaryEval termIn arithmeticOp term')
+    return result
+    <|> return termIn
 
-relationalExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
+-- < | <= | == | > | >= | != 
+relationalExpression :: ParsecT [Token] [(Token, Token)] IO Token
 relationalExpression = do
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
-  return (arithmeticExpressionRight ++ [relationalOp] ++ arithmeticExpressionLeft)
 
-arithOrParentExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
+  let result = binaryEval arithmeticExpressionRight relationalOp arithmeticExpressionLeft
+  return result
+
+arithOrParentExpression :: ParsecT [Token] [(Token, Token)] IO Token
 arithOrParentExpression =
   try
     parenthesisExpression
     <|> arithmeticExpression
 
-logicalExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
+logicalExpression :: ParsecT [Token] [(Token, Token)] IO Token
 logicalExpression =
   try
     binaryLogicalExpression
     <|> notExpression
 
-binaryLogicalExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+-- (<exp>) && (<exp>) | (<exp>) || (<exp>) 
+binaryLogicalExpression :: ParsecT [Token] [(Token, Token)] IO Token
 binaryLogicalExpression = do
   firstPar <- leftParenthesisToken
   relExpLeft <- relationalExpression
@@ -446,78 +463,81 @@ binaryLogicalExpression = do
   thirdPar <- leftParenthesisToken
   relExpRight <- relationalExpression
   forthPar <- rightParenthesisToken
-  return ([firstPar] ++ relExpLeft ++ [secondPar] ++ [logicalLiteral] ++ [thirdPar] ++ relExpRight ++ [forthPar])
+  let result = binaryEval relExpLeft logicalLiteral relExpRight
+  return result
 
-notExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+-- !(<exp>)
+notExpression :: ParsecT [Token] [(Token, Token)] IO Token
 notExpression =
   try
     notBoolValExpression
     <|> notParenthesisExpression
 
-notBoolValExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+notBoolValExpression :: ParsecT [Token] [(Token, Token)] IO Token
 notBoolValExpression =
   do
     notTok <- notToken
     boolValue <- boolValToken
-    return ([notTok] ++ [boolValue])
+    let result = unaryEval notTok boolValue
+    return result
 
-notParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+notParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO Token
 notParenthesisExpression =
   do
     notTok <- notToken
     expression <- parenthesisExpression
-    return ([notTok] ++ expression)
+    let result = unaryEval notTok expression
+    return result
 
-relatOrLogicExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+relatOrLogicExpression :: ParsecT [Token] [(Token, Token)] IO Token
 relatOrLogicExpression =
   try
     relationalExpression
     <|> logicalExpression
 
-parenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+parenthesisExpression :: ParsecT [Token] [(Token, Token)] IO Token
 parenthesisExpression = do
   leftPar <- leftParenthesisToken
   expression <- assignValExpression
   rightPar <- rightParenthesisToken
-  return ([leftPar] ++ expression ++ [rightPar])
+  return expression
 
-ifParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+ifParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO Token
 ifParenthesisExpression = do
   leftPar <- leftParenthesisToken
   expression <- relatOrLogicExpression
   rightPar <- rightParenthesisToken
-  return ([leftPar] ++ expression ++ [rightPar])
+  return expression
 
-idTokenExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+idTokenExpression :: ParsecT [Token] [(Token, Token)] IO Token
 idTokenExpression = do
   idToken' <- idToken
-  return [idToken']
+  return idToken'
 
-valueLiteralExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+valueLiteralExpression :: ParsecT [Token] [(Token, Token)] IO Token
 valueLiteralExpression = do
-  valueLiteral' <- valueLiteral
-  return [valueLiteral']
+  valueLiteral
 
-term :: ParsecT [Token] [(Token, Token)] IO [Token]
+term :: ParsecT [Token] [(Token, Token)] IO Token
 term =
   try
     termExpression
     <|> factor
 
-termExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+termExpression :: ParsecT [Token] [(Token, Token)] IO Token
 termExpression = do
-  factor <- factor
-  termOp <- termOperatorLiteral
-  termAssoc <- termRemaining
-  return (factor ++ [termOp] ++ termAssoc)
+  factor' <- factor
+  result <- termRemaining factor'
+  return result
 
-termRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
-termRemaining =
+termRemaining :: Token -> ParsecT [Token] [(Token, Token)] IO Token
+termRemaining factorIn =
   do
     termOp <- termOperatorLiteral
-    term <- termRemaining
-    return ([termOp] ++ term)
-    <|> factor
+    factor' <- factor
+    result <- termRemaining (binaryEval factorIn termOp factor')
+    return result
+    <|> return factorIn
 
 termOperatorLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 termOperatorLiteral =
@@ -526,28 +546,28 @@ termOperatorLiteral =
     <|> dividerToken
     <|> integerDividerToken
 
-factor :: ParsecT [Token] [(Token, Token)] IO [Token]
+factor :: ParsecT [Token] [(Token, Token)] IO Token
 factor =
   try
     factorExpression
     <|> exponential
 
-factorExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+factorExpression :: ParsecT [Token] [(Token, Token)] IO Token
 factorExpression = do
-  exponential <- exponential
-  factorOp <- exponentToken
-  factor <- factorRemaining
-  return (factor ++ [factorOp] ++ exponential)
+  exponential' <- exponential
+  result <- factorRemaining exponential'
+  return result
 
-factorRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
-factorRemaining =
+factorRemaining :: Token -> ParsecT [Token] [(Token, Token)] IO Token
+factorRemaining exponentialIn =
   do
     factorOp <- exponentToken
-    factor <- factorRemaining
-    return ([factorOp] ++ factor)
-    <|> exponential
+    exponential' <- exponential
+    result <- factorRemaining (binaryEval exponentialIn factorOp exponential')
+    return result
+    <|> return exponentialIn
 
-exponential :: ParsecT [Token] [(Token, Token)] IO [Token]
+exponential :: ParsecT [Token] [(Token, Token)] IO Token
 exponential =
   try
     valueLiteralExpression
@@ -578,35 +598,62 @@ binaryLogicalOperatorLiteral =
   try
     andToken
     <|> orToken
-    <|> xorToken
+    -- <|> xorToken
 
 ----------------------------- Funções de Tipo -----------------------------
+{-
+  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. Recebe como parâmetro um token referente a um tipo
+-}
 getDefaultValue :: Token -> Token
 getDefaultValue (Type "int" (l, c)) = IntValue 0 (l, c)
 getDefaultValue (Type "char" (l, c)) = CharValue "" (l, c)
 getDefaultValue (Type "string" (l, c)) = StringValue "" (l, c)
 getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
 getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
+getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 
+binaryEval :: Token -> Token -> Token -> Token
+binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p
+binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p
+binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p
+
+binaryEval (IntValue x p) (Divider _) (IntValue y _) = IntValue (round (fromIntegral  x / fromIntegral y)) p -- !!!!! Divisão regular entre dois inteiros, está retornando inteiro
+binaryEval (FloatValue x p) (Divider _) (FloatValue y _) = FloatValue (x / y) p
+
+binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p
+binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p
+
+unaryEval :: Token -> Token -> Token
+unaryEval notToken (BoolValue x p) = BoolValue (not x) p
+{-
+  getType recebe um ID e a lista de símbolos atuais, e retornará o Token TypeValue pertencente à tupla deste ID, para posteriormente realizar uma comparação
+-}
 getType :: Token -> [(Token, Token)] -> Token
 getType _ [] = error "variable not found"
-getType (Id id1 p1) ((Id id2 _, value) : t) =
+getType (Id id1 p1) ((Id id2 _, value) : listTail) =
   if id1 == id2
     then value
-    else getType (Id id1 p1) t
+    else getType (Id id1 p1) listTail
 
+{-
+  Recebe dois Tokens TypeValue e compara se são do mesmo tipo
+-}
 compatible :: Token -> Token -> Bool
 compatible (IntValue _ _) (IntValue _ _) = True
+compatible (FloatValue _ _) (FloatValue _ _) = True
+compatible (StringValue _ _) (StringValue _ _) = True
+compatible (CharValue _ _) (CharValue _ _) = True
+compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
 
 ----------------------------- Tabela de símbolos -----------------------------
 {-
   A tabela de simbolos é uma lista de tuplas, onde cada tupla possui dois Tokens, um identificando a variavel e outro identificando seu valor:
-          symtable = [(id1, val1), (id2, val2), ... , (idn, valn)]
+          symtable = [(IdToken1, val1), (IdToken12, val2), ... , (IdToken1n, valn)]
 -}
 
 {-
-  SymtableInsert recebe uma tupla (Token ID, Token Value) e armazena na tabela de simbolos
+  SymtableInsert recebe uma tupla (Token ID, Token TypeValue) e armazena na tabela de simbolos
 -}
 symtableInsert :: (Token, Token) -> [(Token, Token)] -> [(Token, Token)]
 symtableInsert symbol [] = [symbol]
@@ -636,6 +683,6 @@ parser :: [Token] -> IO (Either ParseError [Token])
 parser tokens = runParserT program [] "Error message" tokens
 
 main :: IO ()
-main = case unsafePerformIO (parser (getTokens "exemplo_atribuicao_tipos_simples.txt")) of
+main = case unsafePerformIO (parser (getTokens "exemplo5_atribuicoes_por_expressoes.txt")) of
   Left err -> print err
   Right ans -> print ans

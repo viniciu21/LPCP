@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 ".\tokens.x" #-}
+{-# LINE 1 "tokens.x" #-}
 module Tokens where
     
 import System.IO
@@ -24781,7 +24781,7 @@ alex_action_53 = \p s -> BoolValue False(getLC p)
 alex_action_54 = \p s -> FloatValue (read s) (getLC p)
 alex_action_55 = \p s -> IntValue (read s) (getLC p)
 alex_action_56 = \p s -> StringValue s(getLC p)
-alex_action_57 = \p s -> CharValue s(getLC p)
+alex_action_57 = \p s -> CharValue (init(tail s))(getLC p)
 alex_action_58 = \p s -> Id s (getLC p)
 
 #define ALEX_NOPRED 1
@@ -25016,7 +25016,7 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 76 ".\tokens.x" #-}
+{-# LINE 76 "tokens.x" #-}
 data Token = 
     Id String (Int, Int)                               |
     Colon (Int, Int)                                   |

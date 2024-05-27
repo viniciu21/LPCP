@@ -1,0 +1,38 @@
+declaration:
+    a: int;
+    b: int;
+    c: int;
+    d: int;
+    e: int;
+    f: int;
+end_declaration
+
+main:
+    a = 10 + 5;
+    b = 10 - 5;
+    c = 10 * 2;
+    d = 10 / 2;
+    e = 10 // 2;
+    f = 10 ** 2;
+    #g = !false;
+    #gg = !(10 * 2); # Isto deveria acontecer?
+    #h = (10 + 5);
+    #i = 10;
+    #j = 5 < 10 + 5;
+    #k = 5 + 5 < 10 + 5;
+    #l = 5 - 5 < 10 - 5;
+    #m = 5 * 5 > 5;
+    #n = 5/5 >= 1;
+    #o = 10 // 2 <= 5;
+    #p = 10 ** 2 != 99;
+    #q = (!true) > 10; # Isto deveria acontecer?
+    #r = (10 ** 2) == (10 ** 2);
+    #s = 10 > 5;
+    #t = (10 > 5) && (5 < 10);
+    #u = (10 != 5) || (5 > 10);
+    #v
+    #w
+    #x
+    #y
+    #z
+end_main

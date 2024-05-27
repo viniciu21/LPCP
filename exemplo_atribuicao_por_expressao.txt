@@ -1,7 +1,0 @@
-declaration:
-    b: int;
-end_declaration
-
-main:
-    b = 10 + 5;
-end_main
