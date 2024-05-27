@@ -3,14 +3,14 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "tokens.x" #-}
+{-# LINE 1 ".\tokens.x" #-}
 module Tokens where
     
 import System.IO
 import System.IO.Unsafe
 #include "ghcconfig.h"
 import qualified Data.Array
-#define ALEX_BASIC 1
+#define ALEX_POSN 1
 -- -----------------------------------------------------------------------------
 -- Alex wrapper code.
 --
@@ -24726,63 +24726,63 @@ alex_actions = Data.Array.array (0 :: Int, 146)
   , (0,alex_action_37)
   ]
 
-alex_action_2 = \s -> Colon
-alex_action_3 = \s -> SemiColon
-alex_action_4 = \s -> Comma
-alex_action_5 = \s -> LeftParenthesis
-alex_action_6 = \s -> RightParenthesis
-alex_action_7 = \s -> LeftCurlyBrackets
-alex_action_8 = \s -> RightCurlyBrackets
-alex_action_9 = \s -> To
-alex_action_10 = \s -> Assign
-alex_action_11 = \s -> Plus
-alex_action_12 = \s -> Minus
-alex_action_13 = \s -> Times
-alex_action_14 = \s -> Divider
-alex_action_15 = \s -> IntegerDivider
-alex_action_16 = \s -> Exponent
-alex_action_17 = \s -> And
-alex_action_18 = \s -> Or
-alex_action_19 = \s -> Xor
-alex_action_20 = \s -> Not
-alex_action_21 = \s -> Less
-alex_action_22 = \s -> LessEqual
-alex_action_23 = \s -> Greater
-alex_action_24 = \s -> GreaterEqual
-alex_action_25 = \s -> Equal
-alex_action_26 = \s -> Different
-alex_action_27 = \s -> Type s
-alex_action_28 = \s -> Type s
-alex_action_29 = \s -> Type s
-alex_action_30 = \s -> Type s
-alex_action_31 = \s -> Type s
-alex_action_32 = \s -> Type s
-alex_action_33 = \s -> Type s
-alex_action_34 = \s -> Type s
-alex_action_35 = \s -> Type s
-alex_action_36 = \s -> Type s
-alex_action_37 = \s -> Type s
-alex_action_38 = \s -> Type s
-alex_action_39 = \s -> If
-alex_action_40 = \s -> EndIf
-alex_action_41 = \s -> Elif
-alex_action_42 = \s -> Else
-alex_action_43 = \s -> For
-alex_action_44 = \s -> While
-alex_action_45 = \s -> Return
-alex_action_46 = \s -> Declaration
-alex_action_47 = \s -> EndDeclaration
-alex_action_48 = \s -> Func
-alex_action_49 = \s -> EndFunc
-alex_action_50 = \s -> Main
-alex_action_51 = \s -> EndMain
-alex_action_52 = \s -> BoolValue True
-alex_action_53 = \s -> BoolValue False
-alex_action_54 = \s -> FloatValue (read s)
-alex_action_55 = \s -> IntValue (read s)
-alex_action_56 = \s -> StringValue s
-alex_action_57 = \s -> CharValue s
-alex_action_58 = \s -> Id s
+alex_action_2 = \p s -> Colon (getLC p)
+alex_action_3 = \p s -> SemiColon (getLC p)
+alex_action_4 = \p s -> Comma (getLC p)
+alex_action_5 = \p s -> LeftParenthesis (getLC p)
+alex_action_6 = \p s -> RightParenthesis (getLC p)
+alex_action_7 = \p s -> LeftCurlyBrackets (getLC p)
+alex_action_8 = \p s -> RightCurlyBrackets (getLC p)
+alex_action_9 = \p s -> To (getLC p)
+alex_action_10 = \p s -> Assign (getLC p)
+alex_action_11 = \p s -> Plus (getLC p)
+alex_action_12 = \p s -> Minus (getLC p)
+alex_action_13 = \p s -> Times (getLC p)
+alex_action_14 = \p s -> Divider (getLC p)
+alex_action_15 = \p s -> IntegerDivider (getLC p)
+alex_action_16 = \p s -> Exponent (getLC p)
+alex_action_17 = \p s -> And (getLC p)
+alex_action_18 = \p s -> Or (getLC p)
+alex_action_19 = \p s -> Xor (getLC p)
+alex_action_20 = \p s -> Not (getLC p)
+alex_action_21 = \p s -> Less (getLC p)
+alex_action_22 = \p s -> LessEqual (getLC p)
+alex_action_23 = \p s -> Greater (getLC p)
+alex_action_24 = \p s -> GreaterEqual (getLC p)
+alex_action_25 = \p s -> Equal (getLC p)
+alex_action_26 = \p s -> Different (getLC p)
+alex_action_27 = \p s -> Type s (getLC p)
+alex_action_28 = \p s -> Type s (getLC p)
+alex_action_29 = \p s -> Type s (getLC p)
+alex_action_30 = \p s -> Type s (getLC p)
+alex_action_31 = \p s -> Type s (getLC p)
+alex_action_32 = \p s -> Type s (getLC p)
+alex_action_33 = \p s -> Type s (getLC p)
+alex_action_34 = \p s -> Type s (getLC p)
+alex_action_35 = \p s -> Type s (getLC p)
+alex_action_36 = \p s -> Type s (getLC p)
+alex_action_37 = \p s -> Type s (getLC p)
+alex_action_38 = \p s -> Type s (getLC p)
+alex_action_39 = \p s -> If (getLC p)
+alex_action_40 = \p s -> EndIf (getLC p)
+alex_action_41 = \p s -> Elif (getLC p)
+alex_action_42 = \p s -> Else (getLC p)
+alex_action_43 = \p s -> For (getLC p)
+alex_action_44 = \p s -> While (getLC p)
+alex_action_45 = \p s -> Return (getLC p)
+alex_action_46 = \p s -> Declaration (getLC p)
+alex_action_47 = \p s -> EndDeclaration (getLC p)
+alex_action_48 = \p s -> Func (getLC p)
+alex_action_49 = \p s -> EndFunc (getLC p)
+alex_action_50 = \p s -> Main (getLC p)
+alex_action_51 = \p s -> EndMain (getLC p)
+alex_action_52 = \p s -> BoolValue True(getLC p)
+alex_action_53 = \p s -> BoolValue False(getLC p)
+alex_action_54 = \p s -> FloatValue (read s) (getLC p)
+alex_action_55 = \p s -> IntValue (read s) (getLC p)
+alex_action_56 = \p s -> StringValue s(getLC p)
+alex_action_57 = \p s -> CharValue s(getLC p)
+alex_action_58 = \p s -> Id s (getLC p)
 
 #define ALEX_NOPRED 1
 -- -----------------------------------------------------------------------------
@@ -25016,55 +25016,56 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 76 "tokens.x" #-}
+{-# LINE 76 ".\tokens.x" #-}
 data Token = 
-    Id String                               |
-    Colon                                   |
-    SemiColon                               |
-    Comma                                   |
-    LeftParenthesis                         |
-    RightParenthesis                        |
-    LeftCurlyBrackets                       |
-    RightCurlyBrackets                      |
-    To                                      |
-    Assign                                  |
-    Plus                                    |
-    Minus                                   |
-    Times                                   |
-    Divider                                 |
-    IntegerDivider                          |
-    Exponent                                |
-    And                                     |
-    Or                                      |
-    Xor                                     |
-    Not                                     |
-    Less                                    |
-    LessEqual                               |
-    Greater                                 |
-    GreaterEqual                            |
-    Equal                                   |
-    Different                               |
-    Type String                             |
-    If                                      |
-    EndIf                                   |  
-    Elif                                    |
-    Else                                    |
-    For                                     |
-    While                                   |
-    Return                                  |
-    Declaration                             |
-    EndDeclaration                          |
-    Func                                    |
-    EndFunc                                 |
-    Main                                    |
-    EndMain                                 |
-    IntValue Int                            |
-    FloatValue Float                        |
-    StringValue String                      |
-    CharValue String                        |
-    BoolValue Bool                  
+    Id String (Int, Int)                               |
+    Colon (Int, Int)                                   |
+    SemiColon (Int, Int)                               |
+    Comma (Int, Int)                                   |
+    LeftParenthesis (Int, Int)                         |
+    RightParenthesis (Int, Int)                        |
+    LeftCurlyBrackets (Int, Int)                       |
+    RightCurlyBrackets (Int, Int)                      |
+    To (Int, Int)                                      |
+    Assign (Int, Int)                                  |
+    Plus (Int, Int)                                    |
+    Minus (Int, Int)                                   |
+    Times (Int, Int)                                   |
+    Divider (Int, Int)                                 |
+    IntegerDivider (Int, Int)                          |
+    Exponent (Int, Int)                                |
+    And (Int, Int)                                     |
+    Or (Int, Int)                                      |
+    Xor (Int, Int)                                     |
+    Not (Int, Int)                                     |
+    Less (Int, Int)                                    |
+    LessEqual (Int, Int)                               |
+    Greater (Int, Int)                                 |
+    GreaterEqual (Int, Int)                            |
+    Equal (Int, Int)                                   |
+    Different (Int, Int)                               |
+    Type String (Int, Int)                             |
+    If (Int, Int)                                      |
+    EndIf (Int, Int)                                   |  
+    Elif (Int, Int)                                    |
+    Else (Int, Int)                                    |
+    For (Int, Int)                                     |
+    While (Int, Int)                                   |
+    Return (Int, Int)                                  |
+    Declaration (Int, Int)                             |
+    EndDeclaration (Int, Int)                          |
+    Func (Int, Int)                                    |
+    EndFunc (Int, Int)                                 |
+    Main (Int, Int)                                    |
+    EndMain (Int, Int)                                 |
+    IntValue Int (Int, Int)                            |
+    FloatValue Float (Int, Int)                        |
+    StringValue String (Int, Int)                      |
+    CharValue String (Int, Int)                        |
+    BoolValue Bool (Int, Int)             
     deriving (Eq,Show)
 
+getLC (AlexPn _ l c) = (l, c)  
 
 getTokens fn = unsafePerformIO (getTokensAux fn)
 

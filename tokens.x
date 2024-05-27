@@ -5,7 +5,7 @@ import System.IO
 import System.IO.Unsafe
 }
 
-%wrapper "basic"
+%wrapper "posn"
 
 $digit = 0-9
 $alpha = [a-zA-Z]
@@ -14,112 +14,115 @@ tokens :-
 
     $white+                                   ;
     "#".*                                     ;
-    ":"                                       { \s -> Colon } 
-    ";"                                       { \s -> SemiColon } 
-    ","                                       { \s -> Comma } 
-    "("                                       { \s -> LeftParenthesis } 
-    ")"                                       { \s -> RightParenthesis } 
-    "{"                                       { \s -> LeftCurlyBrackets } 
-    "}"                                       { \s -> RightCurlyBrackets } 
-    "->"                                      { \s -> To } 
-    "="                                       { \s -> Assign }
-    "+"                                       { \s -> Plus } 
-    "-"                                       { \s -> Minus } 
-    "*"                                       { \s -> Times } 
-    "/"                                       { \s -> Divider } 
-    "//"                                      { \s -> IntegerDivider } 
-    "**"                                      { \s -> Exponent } 
-    "&&"                                      { \s -> And } 
-    "||"                                      { \s -> Or } 
-    "^"                                       { \s -> Xor } 
-    "!"                                       { \s -> Not } 
-    "<"                                       { \s -> Less } 
-    "<="                                       { \s -> LessEqual } 
-    ">"                                       { \s -> Greater }
-    ">="                                       { \s -> GreaterEqual } 
-    "=="                                      { \s -> Equal } 
-    "!="                                      { \s -> Different } 
-    "int"                                     { \s -> Type s } 
-    "float"                                   { \s -> Type s } 
-    "char"                                    { \s -> Type s } 
-    "string"                                  { \s -> Type s } 
-    "bool"                                    { \s -> Type s } 
-    "list"                                    { \s -> Type s } 
-    "stack"                                   { \s -> Type s } 
-    "queue"                                   { \s -> Type s } 
-    "matrix"                                  { \s -> Type s } 
-    "graph"                                   { \s -> Type s } 
-    "tree"                                    { \s -> Type s } 
-    "n-array"                                 { \s -> Type s } 
-    "if"                                      { \s -> If } 
-    "elif"                                    { \s -> Elif } 
-    "else"                                    { \s -> Else } 
-    "for"                                     { \s -> For } 
-    "while"                                   { \s -> While } 
-    "return"                                  { \s -> Return } 
-    "declaration"                             { \s -> Declaration } 
-    "end_declaration"                         { \s -> EndDeclaration } 
-    "func"                                    { \s -> Func } 
-    "end_func"                                { \s -> EndFunc } 
-    "main"                                    { \s -> Main } 
-    "end_main"                                { \s -> EndMain } 
-    "true"                                    { \s -> BoolValue True}
-    "false"                                   { \s -> BoolValue False}
-    $digit+ \. $digit+                        { \s -> FloatValue (read s) }
-    $digit+                                   { \s -> IntValue (read s) }
-    \" $alpha [$alpha $digit ! \_ \']* \"     { \s -> StringValue s}
-    \' $printable \'                          { \s -> CharValue s} 
-    $alpha [$alpha $digit \_ \']*             { \s -> Id s }
+    ":"                                       { \p s -> Colon (getLC p) } 
+    ";"                                       { \p s -> SemiColon (getLC p) } 
+    ","                                       { \p s -> Comma (getLC p) } 
+    "("                                       { \p s -> LeftParenthesis (getLC p) } 
+    ")"                                       { \p s -> RightParenthesis (getLC p) } 
+    "{"                                       { \p s -> LeftCurlyBrackets (getLC p) } 
+    "}"                                       { \p s -> RightCurlyBrackets (getLC p) } 
+    "->"                                      { \p s -> To (getLC p) } 
+    "="                                       { \p s -> Assign (getLC p) }
+    "+"                                       { \p s -> Plus (getLC p) } 
+    "-"                                       { \p s -> Minus (getLC p) } 
+    "*"                                       { \p s -> Times (getLC p) } 
+    "/"                                       { \p s -> Divider (getLC p) } 
+    "//"                                      { \p s -> IntegerDivider (getLC p) } 
+    "**"                                      { \p s -> Exponent (getLC p) } 
+    "&&"                                      { \p s -> And (getLC p) } 
+    "||"                                      { \p s -> Or (getLC p) } 
+    "^"                                       { \p s -> Xor (getLC p) } 
+    "!"                                       { \p s -> Not (getLC p) } 
+    "<"                                       { \p s -> Less (getLC p) } 
+    "<="                                       { \p s -> LessEqual (getLC p) } 
+    ">"                                       { \p s -> Greater (getLC p) }
+    ">="                                       { \p s -> GreaterEqual (getLC p) } 
+    "=="                                      { \p s -> Equal (getLC p) } 
+    "!="                                      { \p s -> Different (getLC p) } 
+    "int"                                     { \p s -> Type s (getLC p) } 
+    "float"                                   { \p s -> Type s (getLC p) } 
+    "char"                                    { \p s -> Type s (getLC p) } 
+    "string"                                  { \p s -> Type s (getLC p) } 
+    "bool"                                    { \p s -> Type s (getLC p) } 
+    "list"                                    { \p s -> Type s (getLC p) } 
+    "stack"                                   { \p s -> Type s (getLC p) } 
+    "queue"                                   { \p s -> Type s (getLC p) } 
+    "matrix"                                  { \p s -> Type s (getLC p) } 
+    "graph"                                   { \p s -> Type s (getLC p) } 
+    "tree"                                    { \p s -> Type s (getLC p) } 
+    "n-array"                                 { \p s -> Type s (getLC p) } 
+    "if"                                      { \p s -> If (getLC p) } 
+    "end_if"                                  { \p s -> EndIf (getLC p) }
+    "elif"                                    { \p s -> Elif (getLC p) } 
+    "else"                                    { \p s -> Else (getLC p) } 
+    "for"                                     { \p s -> For (getLC p) } 
+    "while"                                   { \p s -> While (getLC p) } 
+    "return"                                  { \p s -> Return (getLC p) } 
+    "declaration"                             { \p s -> Declaration (getLC p) } 
+    "end_declaration"                         { \p s -> EndDeclaration (getLC p) } 
+    "func"                                    { \p s -> Func (getLC p) } 
+    "end_func"                                { \p s -> EndFunc (getLC p) } 
+    "main"                                    { \p s -> Main (getLC p) } 
+    "end_main"                                { \p s -> EndMain (getLC p) } 
+    "true"                                    { \p s -> BoolValue True(getLC p) }
+    "false"                                   { \p s -> BoolValue False(getLC p) }
+    $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
+    $digit+                                   { \p s -> IntValue (read s) (getLC p) }
+    \" $alpha [$alpha $digit ! \_ \']* \"     { \p s -> StringValue s(getLC p) }
+    \' $printable \'                          { \p s -> CharValue s(getLC p) } 
+    $alpha [$alpha $digit \_ \']*             { \p s -> Id s (getLC p) }
 
 
 {
 data Token = 
-    Id String                               |
-    Colon                                   |
-    SemiColon                               |
-    Comma                                   |
-    LeftParenthesis                         |
-    RightParenthesis                        |
-    LeftCurlyBrackets                       |
-    RightCurlyBrackets                      |
-    To                                      |
-    Assign                                  |
-    Plus                                    |
-    Minus                                   |
-    Times                                   |
-    Divider                                 |
-    IntegerDivider                          |
-    Exponent                                |
-    And                                     |
-    Or                                      |
-    Xor                                     |
-    Not                                     |
-    Less                                    |
-    LessEqual                               |
-    Greater                                 |
-    GreaterEqual                            |
-    Equal                                   |
-    Different                               |
-    Type String                             |
-    If                                      |
-    Elif                                    |
-    Else                                    |
-    For                                     |
-    While                                   |
-    Return                                  |
-    Declaration                             |
-    EndDeclaration                          |
-    Func                                    |
-    EndFunc                                 |
-    Main                                    |
-    EndMain                                 |
-    IntValue Int                            |
-    FloatValue Float                        |
-    StringValue String                      |
-    CharValue String                        |
-    BoolValue Bool                  
+    Id String (Int, Int)                               |
+    Colon (Int, Int)                                   |
+    SemiColon (Int, Int)                               |
+    Comma (Int, Int)                                   |
+    LeftParenthesis (Int, Int)                         |
+    RightParenthesis (Int, Int)                        |
+    LeftCurlyBrackets (Int, Int)                       |
+    RightCurlyBrackets (Int, Int)                      |
+    To (Int, Int)                                      |
+    Assign (Int, Int)                                  |
+    Plus (Int, Int)                                    |
+    Minus (Int, Int)                                   |
+    Times (Int, Int)                                   |
+    Divider (Int, Int)                                 |
+    IntegerDivider (Int, Int)                          |
+    Exponent (Int, Int)                                |
+    And (Int, Int)                                     |
+    Or (Int, Int)                                      |
+    Xor (Int, Int)                                     |
+    Not (Int, Int)                                     |
+    Less (Int, Int)                                    |
+    LessEqual (Int, Int)                               |
+    Greater (Int, Int)                                 |
+    GreaterEqual (Int, Int)                            |
+    Equal (Int, Int)                                   |
+    Different (Int, Int)                               |
+    Type String (Int, Int)                             |
+    If (Int, Int)                                      |
+    EndIf (Int, Int)                                   |  
+    Elif (Int, Int)                                    |
+    Else (Int, Int)                                    |
+    For (Int, Int)                                     |
+    While (Int, Int)                                   |
+    Return (Int, Int)                                  |
+    Declaration (Int, Int)                             |
+    EndDeclaration (Int, Int)                          |
+    Func (Int, Int)                                    |
+    EndFunc (Int, Int)                                 |
+    Main (Int, Int)                                    |
+    EndMain (Int, Int)                                 |
+    IntValue Int (Int, Int)                            |
+    FloatValue Float (Int, Int)                        |
+    StringValue String (Int, Int)                      |
+    CharValue String (Int, Int)                        |
+    BoolValue Bool (Int, Int)             
     deriving (Eq,Show)
 
+getLC (AlexPn _ l c) = (l, c)  
 
 getTokens fn = unsafePerformIO (getTokensAux fn)
 

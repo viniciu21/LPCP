@@ -3,250 +3,256 @@
 {-# HLINT ignore "Use :" #-}
 module Main (main) where
 
-import Control.Monad.Cont (MonadIO (liftIO))
-import Data.Binary.Get (remaining)
+import Control.Monad.IO.Class
+import System.IO.Unsafe
 import Text.Parsec
 import Tokens
 
 ----------------------------- Blocos -----------------------------
 declarationToken = tokenPrim show update_pos get_token -- declaration
   where
-    get_token Declaration = Just Declaration
+    get_token (Declaration position) = Just (Declaration position)
     get_token _ = Nothing
 
-endDeclarationToken :: Parsec [Token] st Token
+endDeclarationToken :: ParsecT [Token] [(Token, Token)] IO Token
 endDeclarationToken = tokenPrim show update_pos get_token -- end_declaration
   where
-    get_token EndDeclaration = Just EndDeclaration
+    get_token (EndDeclaration position) = Just (EndDeclaration position)
     get_token _ = Nothing
 
 mainToken = tokenPrim show update_pos get_token -- main
   where
-    get_token Main = Just Main
+    get_token (Main position) = Just (Main position)
     get_token _ = Nothing
 
 endMainToken = tokenPrim show update_pos get_token -- end_main
   where
-    get_token EndMain = Just EndMain
+    get_token (EndMain position) = Just (EndMain position)
     get_token _ = Nothing
 
 ifToken = tokenPrim show update_pos get_token -- if
   where
-    get_token If = Just If
+    get_token (If position) = Just (If position)
     get_token _ = Nothing
 
 endifToken = tokenPrim show update_pos get_token -- endIf
   where
-    get_token EndIf = Just EndIf
+    get_token (EndIf position) = Just (EndIf position)
     get_token _ = Nothing
 
-elifToken :: Parsec [Token] st Token
+elifToken :: ParsecT [Token] [(Token, Token)] IO Token
 elifToken = tokenPrim show update_pos get_token -- elif
   where
-    get_token Elif = Just Elif
+    get_token (Elif position) = Just (Elif position)
     get_token _ = Nothing
 
-elseToken :: Parsec [Token] st Token
+elseToken :: ParsecT [Token] [(Token, Token)] IO Token
 elseToken = tokenPrim show update_pos get_token -- else
   where
-    get_token Else = Just Else
+    get_token (Else position) = Just (Else position)
     get_token _ = Nothing
 
 ----------------------------- Simbolos -----------------------------
 
 -- :Colon
+colonToken :: ParsecT [Token] [(Token, Token)] IO Token
 colonToken = tokenPrim show update_pos get_token
   where
-    get_token Colon = Just Colon
+    get_token (Colon position) = Just (Colon position)
     get_token _ = Nothing
 
 -- ; SemiColon
+semiColonToken :: ParsecT [Token] [(Token, Token)] IO Token
 semiColonToken = tokenPrim show update_pos get_token
   where
-    get_token SemiColon = Just SemiColon
+    get_token (SemiColon position) = Just (SemiColon position)
     get_token _ = Nothing
 
 -- , Comma
-commaToken :: Parsec [Token] st Token
+commaToken :: ParsecT [Token] [(Token, Token)] IO Token
 commaToken = tokenPrim show update_pos get_token
   where
-    get_token Comma = Just Comma
+    get_token (Comma position) = Just (Comma position)
     get_token _ = Nothing
 
 -- ( LeftParenthesis
+leftParenthesisToken :: ParsecT [Token] [(Token, Token)] IO Token
 leftParenthesisToken = tokenPrim show update_pos get_token
   where
-    get_token LeftParenthesis = Just LeftParenthesis
+    get_token (LeftParenthesis position) = Just (LeftParenthesis position)
     get_token _ = Nothing
 
 -- ) RightParenthesis
+rightParenthesisToken :: ParsecT [Token] [(Token, Token)] IO Token
 rightParenthesisToken = tokenPrim show update_pos get_token
   where
-    get_token RightParenthesis = Just RightParenthesis
+    get_token (RightParenthesis position) = Just (RightParenthesis position)
     get_token _ = Nothing
 
 -- { LeftCurlyBrackets
-leftCurlyBracketsToken :: Parsec [Token] st Token
+leftCurlyBracketsToken :: ParsecT [Token] [(Token, Token)] IO Token
 leftCurlyBracketsToken = tokenPrim show update_pos get_token
   where
-    get_token LeftCurlyBrackets = Just LeftCurlyBrackets
+    get_token (LeftCurlyBrackets position) = Just (LeftCurlyBrackets position)
     get_token _ = Nothing
 
 -- } RightCurlyBrackets
-rightCurlyBracketsToken :: Parsec [Token] st Token
+rightCurlyBracketsToken :: ParsecT [Token] [(Token, Token)] IO Token
 rightCurlyBracketsToken = tokenPrim show update_pos get_token
   where
-    get_token RightCurlyBrackets = Just RightCurlyBrackets
+    get_token (RightCurlyBrackets position) = Just (RightCurlyBrackets position)
     get_token _ = Nothing
 
 -- -> To
-toToken :: Parsec [Token] st Token
+toToken :: ParsecT [Token] [(Token, Token)] IO Token
 toToken = tokenPrim show update_pos get_token
   where
-    get_token To = Just To
+    get_token (To position) = Just (To position)
     get_token _ = Nothing
 
 -- = Assign
 assignToken = tokenPrim show update_pos get_token
   where
-    get_token Assign = Just Assign
+    get_token (Assign position) = Just (Assign position)
     get_token _ = Nothing
 
 -- + Plus
 plusToken = tokenPrim show update_pos get_token
   where
-    get_token Plus = Just Plus
+    get_token (Plus position) = Just (Plus position)
     get_token _ = Nothing
 
 -- - Minus
 minusToken = tokenPrim show update_pos get_token
   where
-    get_token Minus = Just Minus
+    get_token (Minus position) = Just (Minus position)
     get_token _ = Nothing
 
 -- * Times
 
 timesToken = tokenPrim show update_pos get_token
   where
-    get_token Times = Just Times
+    get_token (Times position) = Just (Times position)
     get_token _ = Nothing
 
 -- / Divider
 dividerToken = tokenPrim show update_pos get_token
   where
-    get_token Divider = Just Divider
+    get_token (Divider position) = Just (Divider position)
     get_token _ = Nothing
 
 -- // IntegerDivider
 integerDividerToken = tokenPrim show update_pos get_token
   where
-    get_token IntegerDivider = Just IntegerDivider
+    get_token (IntegerDivider position) = Just (IntegerDivider position)
     get_token _ = Nothing
 
 -- ** Exponent
 
 exponentToken = tokenPrim show update_pos get_token
   where
-    get_token Exponent = Just Exponent
+    get_token (Exponent position) = Just (Exponent position)
     get_token _ = Nothing
 
 -- && And
 andToken = tokenPrim show update_pos get_token
   where
-    get_token And = Just And
+    get_token (And position) = Just (And position)
     get_token _ = Nothing
 
 -- | | Or
 orToken = tokenPrim show update_pos get_token
   where
-    get_token Or = Just Or
+    get_token (Or position) = Just (Or position)
     get_token _ = Nothing
 -- ^ Xor
 
 xorToken = tokenPrim show update_pos get_token
   where
-    get_token Xor = Just Xor
+    get_token (Xor position) = Just (Xor position)
     get_token _ = Nothing
 
 -- ! Not
 notToken = tokenPrim show update_pos get_token
   where
-    get_token Not = Just Not
+    get_token (Not position) = Just (Not position)
     get_token _ = Nothing
 
 -- < Less
 lessToken = tokenPrim show update_pos get_token
   where
-    get_token Less = Just Less
+    get_token (Less position) = Just (Less position)
     get_token _ = Nothing
 
 -- <= LessEqual
 lessEqualToken = tokenPrim show update_pos get_token
   where
-    get_token LessEqual = Just LessEqual
+    get_token (LessEqual position) = Just (LessEqual position)
     get_token _ = Nothing
 
 -- > Greater
 greaterToken = tokenPrim show update_pos get_token
   where
-    get_token Greater = Just Greater
+    get_token (Greater position) = Just (Greater position)
     get_token _ = Nothing
 
 -- >= GreaterEqual
 greaterEqualToken = tokenPrim show update_pos get_token
   where
-    get_token GreaterEqual = Just GreaterEqual
+    get_token (GreaterEqual position) = Just (GreaterEqual position)
     get_token _ = Nothing
 
 -- == Equal
 equalToken = tokenPrim show update_pos get_token
   where
-    get_token Equal = Just Equal
+    get_token (Equal position) = Just (Equal position)
     get_token _ = Nothing
 
 -- != Different
 differentToken = tokenPrim show update_pos get_token
   where
-    get_token Different = Just Different
+    get_token (Different position) = Just (Different position)
     get_token _ = Nothing
 
 ----------------------------- ID -----------------------------
+idToken :: ParsecT [Token] [(Token, Token)] IO Token
 idToken = tokenPrim show update_pos get_token -- ID
   where
-    get_token (Id x) = Just (Id x)
+    get_token (Id x position) = Just (Id x position)
     get_token _ = Nothing
 
 ----------------------------- Tipos -----------------------------
+typeToken :: ParsecT [Token] [(Token, Token)] IO Token
 typeToken = tokenPrim show update_pos get_token
   where
-    get_token (Type x) = Just (Type x)
+    get_token (Type x position) = Just (Type x position)
     get_token _ = Nothing
 
 ----------------------------- Valores Literais -----------------------------
 
 intValToken = tokenPrim show update_pos get_token
   where
-    get_token (IntValue x) = Just (IntValue x)
+    get_token (IntValue x position) = Just (IntValue x position)
     get_token _ = Nothing
 
 floatValToken = tokenPrim show update_pos get_token
   where
-    get_token (FloatValue x) = Just (FloatValue x)
+    get_token (FloatValue x position) = Just (FloatValue x position)
     get_token _ = Nothing
 
 charValToken = tokenPrim show update_pos get_token
   where
-    get_token (CharValue x) = Just (CharValue x)
+    get_token (CharValue x position) = Just (CharValue x position)
     get_token _ = Nothing
 
 stringValToken = tokenPrim show update_pos get_token
   where
-    get_token (StringValue x) = Just (StringValue x)
+    get_token (StringValue x position) = Just (StringValue x position)
     get_token _ = Nothing
 
 boolValToken = tokenPrim show update_pos get_token
   where
-    get_token (BoolValue x) = Just (BoolValue x)
+    get_token (BoolValue x position) = Just (BoolValue x position)
     get_token _ = Nothing
 
 update_pos :: SourcePos -> Token -> [Token] -> SourcePos
@@ -255,7 +261,7 @@ update_pos pos _ [] = pos
 
 -- parsers para os não-terminais
 
-program :: Parsec [Token] st [Token]
+program :: ParsecT [Token] [(Token, Token)] IO [Token]
 program = do
   decl <- declarationToken
   colonD <- colonToken
@@ -270,53 +276,54 @@ program = do
 
 ----------------------------- Declarações -----------------------------
 
-decls :: Parsec [Token] st [Token]
+decls :: ParsecT [Token] [(Token, Token)] IO [Token]
 decls = do
   first <- decl
   next <- remainingDecls
   return (first ++ next)
 
-remainingDecls :: Parsec [Token] st [Token]
+remainingDecls :: ParsecT [Token] [(Token, Token)] IO [Token]
 remainingDecls =
   ( do
       decls
   )
     <|> return []
 
-decl :: Parsec [Token] st [Token]
+decl :: ParsecT [Token] [(Token, Token)] IO ([Token])
 decl = do
   id <- idToken
   colon <- colonToken
   varType <- typeToken
   semiCol <- semiColonToken
+
+  updateState (symtableInsert (id, getDefaultValue varType))
+  state <- getState
+  liftIO (print state)
+
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 ----------------------------- Code -----------------------------
 
-stmts :: Parsec [Token] st [Token]
+stmts :: ParsecT [Token] [(Token, Token)] IO [Token]
 stmts = do
   first <- stmt
   next <- remainingStmts
   return (first ++ next)
 
-remainingStmts :: Parsec [Token] st [Token]
+remainingStmts :: ParsecT [Token] [(Token, Token)] IO [Token]
 remainingStmts =
   ( do
       stmts
   )
     <|> return []
 
-stmt :: Parsec [Token] st [Token]
+stmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 stmt =
   try
     assignStmt
     <|> ifStmt
 
--- assignTok <- assign
--- semiCol <- semiColonToken
--- return (assignTok ++ [semiCol])
-
-ifStmt :: Parsec [Token] st [Token]
+ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 ifStmt = do
   ifLiteral <- ifToken
   expression <- ifParenthesisExpression
@@ -328,7 +335,7 @@ ifStmt = do
   semiCol <- semiColonToken
   return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ elifStmt' ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
 
-elifStmt :: Parsec [Token] st [Token]
+elifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 elifStmt =
   ( do
       elifLiteral <- elifToken
@@ -339,7 +346,7 @@ elifStmt =
   )
     <|> return []
 
-elseStmt :: Parsec [Token] st [Token]
+elseStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 elseStmt =
   ( do
       elseLiteral <- elseToken
@@ -349,26 +356,26 @@ elseStmt =
   )
     <|> return []
 
-assignStmt :: Parsec [Token] st [Token]
+assignStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 assignStmt = do
   assignTok <- assign
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
-assign :: Parsec [Token] st [Token]
+assign :: ParsecT [Token] [(Token, Token)] IO [Token]
 assign = do
   id <- idToken
   assignSym <- assignToken
   value <- assignVal
   return (id : assignSym : value)
 
-assignVal :: Parsec [Token] st [Token]
+assignVal :: ParsecT [Token] [(Token, Token)] IO [Token]
 assignVal =
   try
     assignValExpression
     <|> valueLiteralExpression
 
-valueLiteral :: Parsec [Token] st Token
+valueLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 valueLiteral =
   do
     intValToken
@@ -379,7 +386,7 @@ valueLiteral =
 
 ----------------------------- Expressões -----------------------------
 
-assignValExpression :: Parsec [Token] st [Token]
+assignValExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
 assignValExpression =
   try
     relationalExpression
@@ -390,20 +397,20 @@ assignValExpression =
 
 -- <|> call
 
-arithmeticExpression :: Parsec [Token] st [Token]
+arithmeticExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
 arithmeticExpression =
   try
     plusMinusExpression
     <|> term
 
-plusMinusExpression :: Parsec [Token] st [Token]
+plusMinusExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 plusMinusExpression = do
   term' <- term
   arithmeticOp <- binaryArithmeticOperatorLiteral
   expressionLeft <- arithmeticExpressionRemaining
   return (term' ++ [arithmeticOp] ++ expressionLeft)
 
-arithmeticExpressionRemaining :: Parsec [Token] st [Token]
+arithmeticExpressionRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
 arithmeticExpressionRemaining =
   do
     arithmeticOp <- binaryArithmeticOperatorLiteral
@@ -411,26 +418,26 @@ arithmeticExpressionRemaining =
     return ([arithmeticOp] ++ expressionLeft)
     <|> term
 
-relationalExpression :: Parsec [Token] st [Token]
+relationalExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
 relationalExpression = do
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
   return (arithmeticExpressionRight ++ [relationalOp] ++ arithmeticExpressionLeft)
 
-arithOrParentExpression :: Parsec [Token] st [Token]
+arithOrParentExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
 arithOrParentExpression =
   try
     parenthesisExpression
     <|> arithmeticExpression
 
-logicalExpression :: Parsec [Token] st [Token]
+logicalExpression :: ParsecT [Token] [(Token, Token)] IO ([Token])
 logicalExpression =
   try
     binaryLogicalExpression
     <|> notExpression
 
-binaryLogicalExpression :: Parsec [Token] st [Token]
+binaryLogicalExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 binaryLogicalExpression = do
   firstPar <- leftParenthesisToken
   relExpLeft <- relationalExpression
@@ -441,70 +448,70 @@ binaryLogicalExpression = do
   forthPar <- rightParenthesisToken
   return ([firstPar] ++ relExpLeft ++ [secondPar] ++ [logicalLiteral] ++ [thirdPar] ++ relExpRight ++ [forthPar])
 
-notExpression :: Parsec [Token] st [Token]
+notExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 notExpression =
   try
     notBoolValExpression
     <|> notParenthesisExpression
 
-notBoolValExpression :: Parsec [Token] st [Token]
+notBoolValExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 notBoolValExpression =
   do
     notTok <- notToken
     boolValue <- boolValToken
     return ([notTok] ++ [boolValue])
 
-notParenthesisExpression :: Parsec [Token] st [Token]
+notParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 notParenthesisExpression =
   do
     notTok <- notToken
     expression <- parenthesisExpression
     return ([notTok] ++ expression)
 
-relatOrLogicExpression :: Parsec [Token] st [Token]
+relatOrLogicExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 relatOrLogicExpression =
   try
     relationalExpression
     <|> logicalExpression
 
-parenthesisExpression :: Parsec [Token] st [Token]
+parenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 parenthesisExpression = do
   leftPar <- leftParenthesisToken
   expression <- assignValExpression
   rightPar <- rightParenthesisToken
   return ([leftPar] ++ expression ++ [rightPar])
 
-ifParenthesisExpression :: Parsec [Token] st [Token]
+ifParenthesisExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 ifParenthesisExpression = do
   leftPar <- leftParenthesisToken
   expression <- relatOrLogicExpression
   rightPar <- rightParenthesisToken
   return ([leftPar] ++ expression ++ [rightPar])
 
-idTokenExpression :: Parsec [Token] st [Token]
+idTokenExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 idTokenExpression = do
   idToken' <- idToken
   return [idToken']
 
-valueLiteralExpression :: Parsec [Token] st [Token]
+valueLiteralExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 valueLiteralExpression = do
   valueLiteral' <- valueLiteral
   return [valueLiteral']
 
-term :: Parsec [Token] st [Token]
+term :: ParsecT [Token] [(Token, Token)] IO [Token]
 term =
   try
     termExpression
     <|> factor
 
-termExpression :: Parsec [Token] st [Token]
+termExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 termExpression = do
   factor <- factor
   termOp <- termOperatorLiteral
   termAssoc <- termRemaining
   return (factor ++ [termOp] ++ termAssoc)
 
-termRemaining :: Parsec [Token] st [Token]
+termRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
 termRemaining =
   do
     termOp <- termOperatorLiteral
@@ -512,27 +519,27 @@ termRemaining =
     return ([termOp] ++ term)
     <|> factor
 
-termOperatorLiteral :: Parsec [Token] st Token
+termOperatorLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 termOperatorLiteral =
   do
     timesToken
     <|> dividerToken
     <|> integerDividerToken
 
-factor :: Parsec [Token] st [Token]
+factor :: ParsecT [Token] [(Token, Token)] IO [Token]
 factor =
   try
     factorExpression
     <|> exponential
 
-factorExpression :: Parsec [Token] st [Token]
+factorExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
 factorExpression = do
   exponential <- exponential
   factorOp <- exponentToken
   factor <- factorRemaining
   return (factor ++ [factorOp] ++ exponential)
 
-factorRemaining :: Parsec [Token] st [Token]
+factorRemaining :: ParsecT [Token] [(Token, Token)] IO [Token]
 factorRemaining =
   do
     factorOp <- exponentToken
@@ -540,7 +547,7 @@ factorRemaining =
     return ([factorOp] ++ factor)
     <|> exponential
 
-exponential :: Parsec [Token] st [Token]
+exponential :: ParsecT [Token] [(Token, Token)] IO [Token]
 exponential =
   try
     valueLiteralExpression
@@ -550,13 +557,13 @@ exponential =
 
 ----------------------------- Parsec de literais -----------------------------
 
-binaryArithmeticOperatorLiteral :: Parsec [Token] st Token
+binaryArithmeticOperatorLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 binaryArithmeticOperatorLiteral =
   try
     plusToken
     <|> minusToken
 
-binaryRelationalOperatorLiteral :: Parsec [Token] st Token
+binaryRelationalOperatorLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 binaryRelationalOperatorLiteral =
   try
     lessToken
@@ -566,17 +573,69 @@ binaryRelationalOperatorLiteral =
     <|> equalToken
     <|> differentToken
 
-binaryLogicalOperatorLiteral :: Parsec [Token] st Token
+binaryLogicalOperatorLiteral :: ParsecT [Token] [(Token, Token)] IO Token
 binaryLogicalOperatorLiteral =
   try
     andToken
     <|> orToken
     <|> xorToken
 
-parser :: [Token] -> Either ParseError [Token]
-parser tokens = runParser program () "Error message" tokens
+----------------------------- Funções de Tipo -----------------------------
+getDefaultValue :: Token -> Token
+getDefaultValue (Type "int" (l, c)) = IntValue 0 (l, c)
+getDefaultValue (Type "char" (l, c)) = CharValue "" (l, c)
+getDefaultValue (Type "string" (l, c)) = StringValue "" (l, c)
+getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
+getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
+
+getType :: Token -> [(Token, Token)] -> Token
+getType _ [] = error "variable not found"
+getType (Id id1 p1) ((Id id2 _, value) : t) =
+  if id1 == id2
+    then value
+    else getType (Id id1 p1) t
+
+compatible :: Token -> Token -> Bool
+compatible (IntValue _ _) (IntValue _ _) = True
+compatible _ _ = False
+
+----------------------------- Tabela de símbolos -----------------------------
+{-
+  A tabela de simbolos é uma lista de tuplas, onde cada tupla possui dois Tokens, um identificando a variavel e outro identificando seu valor:
+          symtable = [(id1, val1), (id2, val2), ... , (idn, valn)]
+-}
+
+{-
+  SymtableInsert recebe uma tupla (Token ID, Token Value) e armazena na tabela de simbolos
+-}
+symtableInsert :: (Token, Token) -> [(Token, Token)] -> [(Token, Token)]
+symtableInsert symbol [] = [symbol]
+symtableInsert symbol symtable = symtable ++ [symbol]
+
+{-
+  symtableUpdate recebe uma tupla (Token ID, Token Value) e atualiza o valor na tabela de símbolos, se o Token ID já estiver na tabela
+-}
+symtableUpdate :: (Token, Token) -> [(Token, Token)] -> [(Token, Token)]
+symtableUpdate _ [] = fail "variable not found"
+symtableUpdate (Id id1 p1, v1) ((Id id2 p2, v2) : t) =
+  if id1 == id2
+    then (Id id1 p2, v1) : t
+    else (Id id2 p2, v2) : symtableUpdate (Id id1 p1, v1) t
+
+{-
+  symtableRemove recebe uma tupla (Token ID, Token Value) e remove  ID e o valor na tabela de símbolos, se o Token ID já estiver na tabela
+-}
+symtableRemove :: (Token, Token) -> [(Token, Token)] -> [(Token, Token)]
+symtableRemove _ [] = fail "variable not found"
+symtableRemove (id1, v1) ((id2, v2) : t) =
+  if id1 == id2
+    then t
+    else (id2, v2) : symtableRemove (id1, v1) t
+
+parser :: [Token] -> IO (Either ParseError [Token])
+parser tokens = runParserT program [] "Error message" tokens
 
 main :: IO ()
-main = case parser (getTokens "exemplo_if_stmts.txt") of
+main = case unsafePerformIO (parser (getTokens "exemplo_atribuicao_tipos_simples.txt")) of
   Left err -> print err
   Right ans -> print ans
