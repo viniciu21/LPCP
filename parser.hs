@@ -8,6 +8,7 @@ import Control.Monad.IO.Class
 import System.IO.Unsafe
 import Text.Parsec
 import Tokens
+import qualified Lexer as requisitada
 
 ----------------------------- Blocos -----------------------------
 declarationToken = tokenPrim show update_pos get_token -- declaration
@@ -168,8 +169,8 @@ orToken = tokenPrim show update_pos get_token
   where
     get_token (Or position) = Just (Or position)
     get_token _ = Nothing
-
 -- ^ Xor
+
 xorToken :: ParsecT [Token] [(Token, Token)] IO Token
 xorToken = tokenPrim show update_pos get_token
   where
@@ -415,7 +416,7 @@ arithmeticExpression =
     plusMinusExpression
     <|> term
 
--- + | - 
+-- + | -
 plusMinusExpression :: ParsecT [Token] [(Token, Token)] IO Token
 plusMinusExpression = do
   term' <- term
@@ -431,7 +432,7 @@ arithmeticExpressionRemaining termIn =
     return result
     <|> return termIn
 
--- < | <= | == | > | >= | != 
+-- < | <= | == | > | >= | !=
 relationalExpression :: ParsecT [Token] [(Token, Token)] IO Token
 relationalExpression = do
   arithmeticExpressionRight <- arithOrParentExpression
@@ -453,7 +454,7 @@ logicalExpression =
     binaryLogicalExpression
     <|> notExpression
 
--- (<exp>) && (<exp>) | (<exp>) || (<exp>) 
+-- (<exp>) && (<exp>) | (<exp>) || (<exp>)
 binaryLogicalExpression :: ParsecT [Token] [(Token, Token)] IO Token
 binaryLogicalExpression = do
   firstPar <- leftParenthesisToken
@@ -598,7 +599,8 @@ binaryLogicalOperatorLiteral =
   try
     andToken
     <|> orToken
-    -- <|> xorToken
+
+-- <|> xorToken
 
 ----------------------------- Funções de Tipo -----------------------------
 {-
@@ -612,19 +614,34 @@ getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
 getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
 getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 
+{-
+  Realiza a operação binária requisitada. Recebendo 3 parâmetros:
+  param1: Token de "TypeValue"
+  param2: Token de Operação
+  param3: Token de "TypeValue"
+-}
 binaryEval :: Token -> Token -> Token -> Token
-binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p
-binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p
+binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p -- Soma
+binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p -- Subtração
 binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p
-
-binaryEval (IntValue x p) (Divider _) (IntValue y _) = IntValue (round (fromIntegral  x / fromIntegral y)) p -- !!!!! Divisão regular entre dois inteiros, está retornando inteiro
+-- Divisão regular
+binaryEval (IntValue x p) (Divider _) (IntValue y _) = FloatValue (fromIntegral x / fromIntegral y) p
+binaryEval (IntValue x p) (Divider _) (FloatValue y _) = FloatValue (fromIntegral x / y) p
+binaryEval (FloatValue x p) (Divider _) (IntValue y _) = FloatValue (x / fromIntegral y) p
 binaryEval (FloatValue x p) (Divider _) (FloatValue y _) = FloatValue (x / y) p
-
+-- Divisão Iteira
 binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p
+-- Exponenciação
 binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p
 
+{-
+  Realiza a operação unária requisitada. Recebendo 2 parâmetros:
+  param2: Token de Operação
+  param3: Token de "TypeValue"
+-}
 unaryEval :: Token -> Token -> Token
-unaryEval notToken (BoolValue x p) = BoolValue (not x) p
+unaryEval notToken (BoolValue x p) = BoolValue (not x) p -- Not (!)
+
 {-
   getType recebe um ID e a lista de símbolos atuais, e retornará o Token TypeValue pertencente à tupla deste ID, para posteriormente realizar uma comparação
 -}
