@@ -8,7 +8,8 @@ import Control.Monad.IO.Class
 import System.IO.Unsafe
 import Text.Parsec
 import Tokens
-import qualified Lexer as requisitada
+
+-- import qualified Lexer as requisitada
 
 ----------------------------- Blocos -----------------------------
 declarationToken = tokenPrim show update_pos get_token -- declaration
