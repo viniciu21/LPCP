@@ -622,24 +622,55 @@ getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
   param3: Token de "TypeValue"
 -}
 binaryEval :: Token -> Token -> Token -> Token
+---- Aritméticas
 binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p -- Soma
 binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p -- Subtração
-binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p
+binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p -- Multiplicação
+binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p -- Divisão Iteira
+binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p -- Exponenciação
 -- Divisão regular
 binaryEval (IntValue x p) (Divider _) (IntValue y _) = FloatValue (fromIntegral x / fromIntegral y) p
 binaryEval (IntValue x p) (Divider _) (FloatValue y _) = FloatValue (fromIntegral x / y) p
 binaryEval (FloatValue x p) (Divider _) (IntValue y _) = FloatValue (x / fromIntegral y) p
 binaryEval (FloatValue x p) (Divider _) (FloatValue y _) = FloatValue (x / y) p
--- Divisão Iteira
-binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p
--- Exponenciação
-binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p
+---- Relacionais
+-- <
+binaryEval (IntValue x p) (Less _) (IntValue y _) = BoolValue (fromIntegral x < fromIntegral y) p
+binaryEval (FloatValue x p) (Less _) (IntValue y _) = BoolValue (x < fromIntegral y) p
+binaryEval (IntValue x p) (Less _) (FloatValue y _) = BoolValue (fromIntegral x < y) p
+binaryEval (FloatValue x p) (Less _) (FloatValue y _) = BoolValue (x < y) p
+-- <=
+binaryEval (IntValue x p) (LessEqual _) (IntValue y _) = BoolValue (fromIntegral x <= fromIntegral y) p
+binaryEval (FloatValue x p) (LessEqual _) (IntValue y _) = BoolValue (x <= fromIntegral y) p
+binaryEval (IntValue x p) (LessEqual _) (FloatValue y _) = BoolValue (fromIntegral x <= y) p
+binaryEval (FloatValue x p) (LessEqual _) (FloatValue y _) = BoolValue (x <= y) p
+-- >
+binaryEval (IntValue x p) (Greater _) (IntValue y _) = BoolValue (fromIntegral x > fromIntegral y) p
+binaryEval (FloatValue x p) (Greater _) (IntValue y _) = BoolValue (x > fromIntegral y) p
+binaryEval (IntValue x p) (Greater _) (FloatValue y _) = BoolValue (fromIntegral x > y) p
+binaryEval (FloatValue x p) (Greater _) (FloatValue y _) = BoolValue (x > y) p
+-- >=
+binaryEval (IntValue x p) (GreaterEqual _) (IntValue y _) = BoolValue (fromIntegral x >= fromIntegral y) p
+binaryEval (FloatValue x p) (GreaterEqual _) (IntValue y _) = BoolValue (x >= fromIntegral y) p
+binaryEval (IntValue x p) (GreaterEqual _) (FloatValue y _) = BoolValue (fromIntegral x >= y) p
+binaryEval (FloatValue x p) (GreaterEqual _) (FloatValue y _) = BoolValue (x >= y) p
+-- ==
+binaryEval (IntValue x p) (Equal _) (IntValue y _) = BoolValue (fromIntegral x == fromIntegral y) p
+binaryEval (FloatValue x p) (Equal _) (IntValue y _) = BoolValue (x == fromIntegral y) p
+binaryEval (IntValue x p) (Equal _) (FloatValue y _) = BoolValue (fromIntegral x == y) p
+binaryEval (FloatValue x p) (Equal _) (FloatValue y _) = BoolValue (x == y) p
+-- !=
+binaryEval (IntValue x p) (Different _) (IntValue y _) = BoolValue (fromIntegral x /= fromIntegral y) p
+binaryEval (FloatValue x p) (Different _) (IntValue y _) = BoolValue (x /= fromIntegral y) p
+binaryEval (IntValue x p) (Different _) (FloatValue y _) = BoolValue (fromIntegral x /= y) p
+binaryEval (FloatValue x p) (Different _) (FloatValue y _) = BoolValue (x /= y) p
 
 {-
   Realiza a operação unária requisitada. Recebendo 2 parâmetros:
   param2: Token de Operação
   param3: Token de "TypeValue"
 -}
+
 unaryEval :: Token -> Token -> Token
 unaryEval notToken (BoolValue x p) = BoolValue (not x) p -- Not (!)
 

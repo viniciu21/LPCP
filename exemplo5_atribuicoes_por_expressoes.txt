@@ -2,9 +2,26 @@ declaration:
     a: int;
     b: int;
     c: int;
-    d: int;
+    d: float;
     e: int;
     f: int;
+    problem_1: int;
+    g: bool;
+    h: int;
+    i: int;
+    j: bool;
+    k: bool;
+    l: bool;
+    m: bool;
+    n: bool;
+    o: bool;
+    p: bool;
+    q: bool;
+    r: bool;
+    s: bool;
+    t: int;
+    u: int;
+    v: int;
 end_declaration
 
 main:
@@ -14,20 +31,20 @@ main:
     d = 10 / 2;
     e = 10 // 2;
     f = 10 ** 2;
-    #g = !false;
-    #gg = !(10 * 2); # Isto deveria acontecer?
-    #h = (10 + 5);
-    #i = 10;
-    #j = 5 < 10 + 5;
-    #k = 5 + 5 < 10 + 5;
-    #l = 5 - 5 < 10 - 5;
-    #m = 5 * 5 > 5;
-    #n = 5/5 >= 1;
-    #o = 10 // 2 <= 5;
-    #p = 10 ** 2 != 99;
-    #q = (!true) > 10; # Isto deveria acontecer?
-    #r = (10 ** 2) == (10 ** 2);
-    #s = 10 > 5;
+    problem_1 = 10 ** 2 - 10 + 5;
+    g = !false;
+    # gg = !(10 * 2); # Isto deveria acontecer?
+    h = (10 + 5);
+    i = 10;
+    j = 5 < 10 + 5;
+    k = 5 + 5 < 10 + 5;
+    l = 5 - 5 < 10 - 5;
+    m = 5 * 5 > 5;
+    n = 5/5 >= 1;
+    o = 10 // 2 <= 5;
+    p = 10 ** 2 != 99;
+    r = (10 ** 2) == (10 ** 2);
+    s = 10 > 5;
     #t = (10 > 5) && (5 < 10);
     #u = (10 != 5) || (5 > 10);
     #v
