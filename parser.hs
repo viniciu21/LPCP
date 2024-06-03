@@ -664,6 +664,9 @@ binaryEval (IntValue x p) (Different _) (IntValue y _) = BoolValue (fromIntegral
 binaryEval (FloatValue x p) (Different _) (IntValue y _) = BoolValue (x /= fromIntegral y) p
 binaryEval (IntValue x p) (Different _) (FloatValue y _) = BoolValue (fromIntegral x /= y) p
 binaryEval (FloatValue x p) (Different _) (FloatValue y _) = BoolValue (x /= y) p
+---- Lógicos
+binaryEval (BoolValue x p) (And _) (BoolValue y _) = BoolValue (x && y) p
+binaryEval (BoolValue x p) (Or _) (BoolValue y _) = BoolValue (x || y) p
 
 {-
   Realiza a operação unária requisitada. Recebendo 2 parâmetros:
