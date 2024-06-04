@@ -4,7 +4,7 @@ declaration:
 end_declaration
 
 main:
-    if(5 < 10 + 5):
+    if(9 < 10):
         a = 5;
     elif(10 > 5):
         b = 10;

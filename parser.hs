@@ -1,7 +1,8 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Use :" #-}
 {-# HLINT ignore "Redundant return" #-}
+{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 module Main (main) where
 
 import Control.Monad.IO.Class
@@ -327,31 +328,56 @@ stmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 stmt =
   try
     assignStmt
+    <|> ifStmt
 
--- <|> ifStmt
+ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+ifStmt = do
+  ifLiteral <- ifToken
+  expression <- ifParenthesisExpression
+  colonLiteral <- colonToken
 
--- ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
--- ifStmt = do
---   ifLiteral <- ifToken
---   expression <- ifParenthesisExpression
---   colonLiteral <- colonToken
---   stmtsBlock <- stmts
---   elifStmt' <- elifStmt
---   elseStmt' <- elseStmt
---   endIfLiteral <- endifToken
---   semiCol <- semiColonToken
---   return ([ifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock ++ elifStmt' ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
+  -- Verifica expressão do if
+  let result = evaluateCondition expression
+  if result
+    then do
+      stmtsBlock <- stmts
+      skip' <- manyTill anyToken (try endifToken)
+      -- liftIO (print skip')
+      semiCol1 <- semiColonToken
+      liftIO (print semiCol1)
+      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [semiCol1])
+    else do
+      skip' <- manyTill anyToken (try elifToken <|> elseToken)
+      liftIO (print skip')
+      elifStmt' <- elifStmt
+      if null elifStmt'
+        then do
+          elseStmt' <- elseStmt
+          endIfLiteral <- endifToken
+          semiCol <- semiColonToken
+          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
+        else do
+          endIfLiteral <- endifToken
+          semiCol <- semiColonToken
+          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt' ++ [endIfLiteral] ++ [semiCol])
 
--- elifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
--- elifStmt =
---   ( do
---       elifLiteral <- elifToken
---       expression <- ifParenthesisExpression
---       colonLiteral <- colonToken
---       stmtsBlock <- stmts
---       return ([elifLiteral] ++ expression ++ [colonLiteral] ++ stmtsBlock)
---   )
---     <|> return []
+elifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+elifStmt =
+  ( do
+      elifLiteral <- elifToken
+      expression <- ifParenthesisExpression
+      colonLiteral <- colonToken
+      -- Verifica expressão do elif
+      let result = evaluateCondition expression
+      if result
+        then do
+          stmtsBlock <- stmts
+          return ([elifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
+        else do
+          elifStmt' <- elifStmt
+          return elifStmt'
+  )
+    <|> return []
 
 elseStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 elseStmt =
@@ -687,6 +713,11 @@ getType (Id id1 p1) ((Id id2 _, value) : listTail) =
     then value
     else getType (Id id1 p1) listTail
 
+evaluateCondition :: Token -> Bool
+evaluateCondition (Id id1 _) = id1 /= "False"
+evaluateCondition (BoolValue val _) = val
+evaluateCondition _ = error "Cannot evaluate condition"
+
 {-
   Recebe dois Tokens TypeValue e compara se são do mesmo tipo
 -}
@@ -697,6 +728,13 @@ compatible (StringValue _ _) (StringValue _ _) = True
 compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
+
+-- Função para pular tokens até encontrar um token específico
+skipUntil :: ParsecT [Token] [(Token, Token)] IO Token -> ParsecT [Token] [(Token, Token)] IO ()
+skipUntil tokenParser = do
+  ue <- manyTill anyToken (try tokenParser)
+  liftIO (print ue)
+  return ()
 
 ----------------------------- Tabela de símbolos -----------------------------
 {-
@@ -735,6 +773,6 @@ parser :: [Token] -> IO (Either ParseError [Token])
 parser tokens = runParserT program [] "Error message" tokens
 
 main :: IO ()
-main = case unsafePerformIO (parser (getTokens "exemplo5_atribuicoes_por_expressoes.txt")) of
+main = case unsafePerformIO (parser (getTokens "exemplo6_if_stmts.txt")) of
   Left err -> print err
   Right ans -> print ans
