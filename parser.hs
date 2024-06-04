@@ -6,6 +6,7 @@
 module Main (main) where
 
 import Control.Monad.IO.Class
+import System.Environment
 import System.IO.Unsafe
 import Text.Parsec
 import Tokens
@@ -773,6 +774,11 @@ parser :: [Token] -> IO (Either ParseError [Token])
 parser tokens = runParserT program [] "Error message" tokens
 
 main :: IO ()
-main = case unsafePerformIO (parser (getTokens "exemplo6_if_stmts.txt")) of
-  Left err -> print err
-  Right ans -> print ans
+main = do
+  args <- getArgs
+  case args of
+    [fn] -> do
+      case unsafePerformIO (parser (getTokens fn)) of
+        Left err -> print err
+        Right ans -> print ans
+    _ -> putStrLn "Please inform the input filename. Closing application..."
