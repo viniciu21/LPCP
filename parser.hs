@@ -306,7 +306,8 @@ decl = do
 
   updateState (symtableInsert (id, getDefaultValue varType))
   state <- getState
-  liftIO (print state)
+  liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show state)
+  -- liftIO (print state)
 
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
@@ -343,25 +344,25 @@ ifStmt = do
     then do
       stmtsBlock <- stmts
       skip' <- manyTill anyToken (lookAhead endifToken)
-      liftIO (putStrLn $ "\nTokens pulados depois do if:" ++ show skip' ++ "\n")
+      liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
       endIfLiteral <- endifToken
       semiCol1 <- semiColonToken
       return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol1])
     else do
       skip' <- manyTill anyToken (lookAhead elifToken <|> elseToken)
-      liftIO (putStrLn $ "\nTokens pulados antes de elif <|> else:" ++ show skip' ++ "\n")
+      liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
       elifStmt' <- elifStmt
       if null elifStmt'
         then do
           skip' <- manyTill anyToken (lookAhead elseToken)
-          liftIO (putStrLn $ "\nTokens pulados antes de else:" ++ show skip' ++ "\n")
+          liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
           elseStmt' <- elseStmt
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
         else do
           skip' <- manyTill anyToken (lookAhead endifToken)
-          liftIO (putStrLn $ "\nTokens pulados após elif:" ++ show skip' ++ "\n")
+          liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt' ++ [endIfLiteral] ++ [semiCol])
@@ -380,7 +381,7 @@ elifStmt =
           return ([elifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
         else do
           skip' <- manyTill anyToken (lookAhead elifToken)
-          liftIO (putStrLn $ "\nTokens pulados antes de elif seguido:" ++ show skip' ++ "\n")
+          liftIO (putStrLn $ "Tokens pulados antes de elif seguido:" ++ show skip')
           elifStmt' <- elifStmt
           return elifStmt'
   )
@@ -413,7 +414,8 @@ assign = do
     else do
       updateState (symtableUpdate (id, value))
       s <- getState
-      liftIO (print s)
+      liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show state)
+      -- liftIO (print s)
       return (id : assignSym : [value])
 
 assignVal :: ParsecT [Token] [(Token, Token)] IO Token
@@ -720,6 +722,9 @@ getType (Id id1 p1) ((Id id2 _, value) : listTail) =
     then value
     else getType (Id id1 p1) listTail
 
+{-
+  Função utilizada para verificar se uma expressão é verdadeira ou falsa para poder entrar em um bloco de código. Utilizado para verificação de Ifs, elifs, whiles e for.
+-}
 evaluateCondition :: Token -> Bool
 evaluateCondition (Id id1 _) = id1 /= "False"
 evaluateCondition (BoolValue val _) = val
