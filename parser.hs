@@ -342,22 +342,26 @@ ifStmt = do
   if result
     then do
       stmtsBlock <- stmts
-      skip' <- manyTill anyToken (try endifToken)
-      -- liftIO (print skip')
+      skip' <- manyTill anyToken (lookAhead endifToken)
+      liftIO (putStrLn $ "\nTokens pulados depois do if:" ++ show skip' ++ "\n")
+      endIfLiteral <- endifToken
       semiCol1 <- semiColonToken
-      liftIO (print semiCol1)
-      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [semiCol1])
+      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol1])
     else do
-      skip' <- manyTill anyToken (try elifToken <|> elseToken)
-      liftIO (print skip')
+      skip' <- manyTill anyToken (lookAhead elifToken <|> elseToken)
+      liftIO (putStrLn $ "\nTokens pulados antes de elif <|> else:" ++ show skip' ++ "\n")
       elifStmt' <- elifStmt
       if null elifStmt'
         then do
+          skip' <- manyTill anyToken (lookAhead elseToken)
+          liftIO (putStrLn $ "\nTokens pulados antes de else:" ++ show skip' ++ "\n")
           elseStmt' <- elseStmt
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
         else do
+          skip' <- manyTill anyToken (lookAhead endifToken)
+          liftIO (putStrLn $ "\nTokens pulados após elif:" ++ show skip' ++ "\n")
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt' ++ [endIfLiteral] ++ [semiCol])
@@ -375,6 +379,8 @@ elifStmt =
           stmtsBlock <- stmts
           return ([elifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
         else do
+          skip' <- manyTill anyToken (lookAhead elifToken)
+          liftIO (putStrLn $ "\nTokens pulados antes de elif seguido:" ++ show skip' ++ "\n")
           elifStmt' <- elifStmt
           return elifStmt'
   )
@@ -729,13 +735,6 @@ compatible (StringValue _ _) (StringValue _ _) = True
 compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
-
--- Função para pular tokens até encontrar um token específico
-skipUntil :: ParsecT [Token] [(Token, Token)] IO Token -> ParsecT [Token] [(Token, Token)] IO ()
-skipUntil tokenParser = do
-  ue <- manyTill anyToken (try tokenParser)
-  liftIO (print ue)
-  return ()
 
 ----------------------------- Tabela de símbolos -----------------------------
 {-
