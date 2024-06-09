@@ -56,7 +56,9 @@ tokens :-
     "elif"                                    { \p s -> Elif (getLC p) } 
     "else"                                    { \p s -> Else (getLC p) } 
     "for"                                     { \p s -> For (getLC p) } 
+    "end_for"                                 { \p s -> EndFor (getLC p) } 
     "while"                                   { \p s -> While (getLC p) } 
+    "end_while"                               { \p s -> EndWhile (getLC p) } 
     "return"                                  { \p s -> Return (getLC p) } 
     "declaration"                             { \p s -> Declaration (getLC p) } 
     "end_declaration"                         { \p s -> EndDeclaration (getLC p) } 
@@ -107,7 +109,9 @@ data Token =
     Elif (Int, Int)                                    |
     Else (Int, Int)                                    |
     For (Int, Int)                                     |
+    EndFor (Int, Int)                                  |
     While (Int, Int)                                   |
+    EndWhile (Int, Int)                                  |
     Return (Int, Int)                                  |
     Declaration (Int, Int)                             |
     EndDeclaration (Int, Int)                          |

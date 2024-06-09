@@ -1,0 +1,11 @@
+declaration:
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+main:
+    while(11 < 10):
+        a = 5;
+    end_while;
+end_main

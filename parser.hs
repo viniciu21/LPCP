@@ -59,6 +59,30 @@ elseToken = tokenPrim show update_pos get_token -- else
     get_token (Else position) = Just (Else position)
     get_token _ = Nothing
 
+whileToken :: ParsecT [Token] [(Token, Token)] IO Token
+whileToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (While position) = Just (While position)
+    get_token _ = Nothing
+
+endWhileToken :: ParsecT [Token] [(Token, Token)] IO Token
+endWhileToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (EndWhile position) = Just (EndWhile position)
+    get_token _ = Nothing
+
+forToken :: ParsecT [Token] [(Token, Token)] IO Token
+forToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (For position) = Just (For position)
+    get_token _ = Nothing
+
+endForToken :: ParsecT [Token] [(Token, Token)] IO Token
+endForToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (EndFor position) = Just (EndFor position)
+    get_token _ = Nothing
+
 ----------------------------- Simbolos -----------------------------
 
 -- :Colon
@@ -331,7 +355,9 @@ stmt =
   try
     assignStmt
     <|> ifStmt
+    <|> whileStmt
 
+---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 ifStmt = do
   ifLiteral <- ifToken
@@ -397,6 +423,18 @@ elseStmt =
   )
     <|> return []
 
+---- While
+whileStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+whileStmt = do
+  whileLiteral <- whileToken
+  expression <- ifParenthesisExpression
+  colonLiteral <- colonToken
+  stmtsBlock <- stmts
+  endWhileLiteral <- endWhileToken
+  semiCol <- semiColonToken
+  return ([whileLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
+
+---- Assign
 assignStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 assignStmt = do
   assignTok <- assign
@@ -784,5 +822,7 @@ main = do
     [fn] -> do
       case unsafePerformIO (parser (getTokens fn)) of
         Left err -> print err
-        Right ans -> print ans
+        Right ans -> do
+          putStr "Tokens do programa: "
+          print ans
     _ -> putStrLn "Please inform the input filename. Closing application..."
