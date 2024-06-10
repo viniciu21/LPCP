@@ -78,3 +78,6 @@
 <elif> -> ELIF '(' <assignValExpression> ')' ':' <stmts>
 <else> -> ELSE ':' <stmts>
 <while> -> WHILE '(' <assignValExpression> ')' ':' <stmts> END_WHILE
+
+<scan> -> SCAN '(' <formatedString> [',' <IDs>] ')'
+<print> -> PRINT '(' <formatedString> [',' <IDs>] ')'

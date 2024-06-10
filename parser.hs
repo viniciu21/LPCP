@@ -330,7 +330,7 @@ decl = do
 
   updateState (symtableInsert (id, getDefaultValue varType))
   state <- getState
-  liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show state)
+  liftIO (putStrLn $ "Declaração de variável: " ++ show id ++ show state)
   -- liftIO (print state)
 
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
@@ -356,6 +356,7 @@ stmt =
     assignStmt
     <|> ifStmt
     <|> whileStmt
+    <|> forStmt
 
 ---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
@@ -434,6 +435,17 @@ whileStmt = do
   semiCol <- semiColonToken
   return ([whileLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
+---- For
+forStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
+forStmt = do
+  forLiteral <- forToken
+  expression <- forExpression
+  colon' <- colonToken
+  stmts' <- stmts
+  endFor <- endForToken
+  semiCol <- semiColonToken
+  return ([forLiteral] ++ expression ++ [colon'] ++ stmts' ++ [endFor] ++ [semiCol])
+
 ---- Assign
 assignStmt :: ParsecT [Token] [(Token, Token)] IO [Token]
 assignStmt = do
@@ -451,9 +463,8 @@ assign = do
     then fail "type mismatch"
     else do
       updateState (symtableUpdate (id, value))
-      s <- getState
-      liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show state)
-      -- liftIO (print s)
+      newState <- getState
+      liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show newState)
       return (id : assignSym : [value])
 
 assignVal :: ParsecT [Token] [(Token, Token)] IO Token
@@ -494,6 +505,7 @@ arithmeticExpression =
 plusMinusExpression :: ParsecT [Token] [(Token, Token)] IO Token
 plusMinusExpression = do
   term' <- term
+  -- liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
   result <- arithmeticExpressionRemaining term'
   return result
 
@@ -587,7 +599,10 @@ ifParenthesisExpression = do
 idTokenExpression :: ParsecT [Token] [(Token, Token)] IO Token
 idTokenExpression = do
   idToken' <- idToken
-  return idToken'
+  symtable <- getState
+  case symtableGet idToken' symtable of
+    Just val -> return val
+    Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] [(Token, Token)] IO Token
 valueLiteralExpression = do
@@ -647,6 +662,17 @@ exponential =
   try
     valueLiteralExpression
     <|> idTokenExpression
+
+forExpression :: ParsecT [Token] [(Token, Token)] IO [Token]
+forExpression = do
+  leftParenthesis <- leftParenthesisToken
+  assign' <- assign
+  semiCol' <- semiColonToken
+  expression <- relatOrLogicExpression
+  semiCol'' <- semiColonToken
+  assign'' <- assign
+  rightParenthesis <- rightParenthesisToken
+  return ([leftParenthesis] ++ assign' ++ [semiCol'] ++ [expression] ++ [semiCol''] ++ assign'' ++ [rightParenthesis])
 
 -- <|> call
 
@@ -784,6 +810,17 @@ compatible _ _ = False
   A tabela de simbolos é uma lista de tuplas, onde cada tupla possui dois Tokens, um identificando a variavel e outro identificando seu valor:
           symtable = [(IdToken1, val1), (IdToken12, val2), ... , (IdToken1n, valn)]
 -}
+
+{-
+  symtableGet recebe um Token ID referente a uma variável, e verifica se ela existe na tabela de símbolos e, caso exista, retorna seu valor.
+-}
+symtableGet :: (Token) -> [(Token, Token)] -> Maybe Token
+symtableGet _ [] = fail "variable not found"
+symtableGet (Id var1 pos1) ((Id var2 pos2, val2) : t) =
+  if var1 == var2
+    then Just val2
+    else symtableGet (Id var1 pos1) t
+symtableGet _ _ = Nothing
 
 {-
   SymtableInsert recebe uma tupla (Token ID, Token TypeValue) e armazena na tabela de simbolos

@@ -111,7 +111,7 @@ data Token =
     For (Int, Int)                                     |
     EndFor (Int, Int)                                  |
     While (Int, Int)                                   |
-    EndWhile (Int, Int)                                  |
+    EndWhile (Int, Int)                                |
     Return (Int, Int)                                  |
     Declaration (Int, Int)                             |
     EndDeclaration (Int, Int)                          |
