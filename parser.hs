@@ -722,11 +722,28 @@ getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 -}
 binaryEval :: Token -> Token -> Token -> Token
 ---- Aritméticas
-binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p -- Soma
-binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p -- Subtração
-binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p -- Multiplicação
-binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p -- Divisão Iteira
-binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p -- Exponenciação
+-- Soma
+binaryEval (IntValue x p) (Plus _) (IntValue y _) = IntValue (x + y) p
+binaryEval (IntValue x p) (Plus _) (FloatValue y _) = FloatValue (fromIntegral x + y) p
+binaryEval (FloatValue x p) (Plus _) (IntValue y _) = FloatValue (x + fromIntegral y) p
+binaryEval (FloatValue x p) (Plus _) (FloatValue y _) = FloatValue (x + y) p
+-- Subtração
+binaryEval (IntValue x p) (Minus _) (IntValue y _) = IntValue (x - y) p
+binaryEval (IntValue x p) (Minus _) (FloatValue y _) = FloatValue (fromIntegral x - y) p
+binaryEval (FloatValue x p) (Minus _) (IntValue y _) = FloatValue (x - fromIntegral y) p
+binaryEval (FloatValue x p) (Minus _) (FloatValue y _) = FloatValue (x - y) p
+-- Multiplicação
+binaryEval (IntValue x p) (Times _) (IntValue y _) = IntValue (x * y) p
+binaryEval (IntValue x p) (Times _) (FloatValue y _) = FloatValue (fromIntegral x * y) p
+binaryEval (FloatValue x p) (Times _) (IntValue y _) = FloatValue (x * fromIntegral y) p
+binaryEval (FloatValue x p) (Times _) (FloatValue y _) = FloatValue (x * y) p
+-- Exponenciação
+binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p
+binaryEval (IntValue x p) (Exponent _) (FloatValue y _) = FloatValue (fromIntegral x ** y) p
+binaryEval (FloatValue x p) (Exponent _) (IntValue y _) = FloatValue (x ^ y) p
+binaryEval (FloatValue x p) (Exponent _) (FloatValue y _) = FloatValue (x ** y) p
+-- Divisão Iteira
+binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p
 -- Divisão regular
 binaryEval (IntValue x p) (Divider _) (IntValue y _) = FloatValue (fromIntegral x / fromIntegral y) p
 binaryEval (IntValue x p) (Divider _) (FloatValue y _) = FloatValue (fromIntegral x / y) p

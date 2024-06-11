@@ -35,8 +35,9 @@
 
 <rtn> -> "return" <assignValExpression> ";"
 
-<assign> -> ID '=' <value> 
+<assignVal> -> ID '=' <value> 
 	   | ID '=' <assignValExpression>
+	   | ID '=' <scan>
 
 <assignValExpression> -> <relationalExpression>
 				| <arithmeticExpression>
@@ -79,5 +80,5 @@
 <else> -> ELSE ':' <stmts>
 <while> -> WHILE '(' <assignValExpression> ')' ':' <stmts> END_WHILE
 
-<scan> -> SCAN '(' <formatedString> [',' <IDs>] ')'
-<print> -> PRINT '(' <formatedString> [',' <IDs>] ')'
+<scan> -> SCAN '(' <string> ')'
+<print> -> PRINT '(' [ (<string> | ID) ',' (ID | <string>)] ')'
