@@ -20,13 +20,14 @@ Para rodar o parser:
 A memória da linguagem é manipulada sob a seguinte estrutura de dados:
 
 ```
-(Bool¹, [(Token, Token)]², [[Token]]³, [[(Token, Token)]]⁴)
+(Bool¹, [(Token, Token)]², [(Token, [(Token, Token)], [Token])]³, [[(Token, (Token, Token))]]⁴, [[(Token, [(Token, Token)], [Token])]]⁵)
 ```
 
-1. Uma variável booliana que será acionada para fazer mudanças semânticas durante a análise sobre blocos de códigos, como subprogramas. Quando estiver falsa, o bloco de código será analisado apenas sintaticamente e, se necessário, guardado na memória.
-2. Uma lista de tuplas, onde cada tupla possui dois tokens que guardarão informações das variáveis existentes no escopo. O primeiro Token é o Token ID da variável. O segundo Token é o Token *TypeValue**.
-3. Uma lista de lista de Tokens, onde serão guardadas a lista de *statements* de uma função. Ou seja, é uma lista de funções onde cada função é representada por uma lista de Tokens.
-4. Uma lista de listas de tuplas de Tokens, onde será armazenado as *structs* criadas pelo usuário. Deve ser interpretado da seguinte forma: Uma lista de structs, onde cada struct é uma lista de variáveis, onde cada variável é uma tupla (ID, *TypeValue**).
+1. **Flag**: Uma variável booliana que será acionada para fazer mudanças semânticas durante a análise sobre blocos de códigos, como subprogramas. Quando estiver falsa, o bloco de código será analisado apenas sintaticamente e, se necessário, guardado na memória.
+2. **Variáveis**: Uma lista de tuplas, onde cada tupla possui dois tokens que guardarão informações das variáveis existentes no escopo do programa principal. O primeiro Token é o Token ID da variável. O segundo Token é o Token *TypeValue**.
+3. **Sintaxe de Funções**: Uma lista de triplas onde o primeiro elemento é um Token ID com o nome da função guardada; O segundo elemento é uma lista de tuplas (ID, *TypeValue**) guardando os parâmetros; E o terceiro elemento é uma lista de Tokens referentes ao corpo da função.
+4. **Structs**: Uma lista de listas de tuplas, onde será armazenado as *structs* criadas pelo usuário. Deve ser interpretado da seguinte forma: Uma lista de structs, onde cada struct é uma tupla com o primeiro elemento sendo o Token ID do seu nome e o segundo elemento sendo uma lista de variáveis, onde cada variável é uma tupla (ID, *TypeValue**).
+5. **Pilha de ativação**: É uma lista de estruturas de funções, onde serão instanciadas as funções ativadas, atribuindo seus valores e fazendo a análise de seus tokens. Dessa forma, é somente uma lista do item 3. Entretanto, onde é guardado só os parâmetros na sintaxe, será também guardado as variáveis locais a medida que elas vão sendo inicializadas e removidas.
 
 *Tokens TypeValue são os Tokens BoolValue, FloatValue, IntValue, StringValue, CharValue que, por sua vez são constituidos de tuplas: (Token, Valor, Posição).
 
