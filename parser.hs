@@ -253,6 +253,12 @@ idToken = tokenPrim show update_pos get_token -- ID
     get_token (Id x position) = Just (Id x position)
     get_token _ = Nothing
 
+scanToken :: ParsecT [Token] MemoryState IO Token
+scanToken = tokenPrim show update_pos get_token -- ID
+  where
+    get_token (Scan x position) = Just (Scan x position)
+    get_token _ = Nothing
+
 ----------------------------- Tipos -----------------------------
 typeToken :: ParsecT [Token] MemoryState IO Token
 typeToken = tokenPrim show update_pos get_token
@@ -472,6 +478,28 @@ assignVal =
   try
     assignValExpression
     <|> valueLiteralExpression
+    <|> scanfExpression
+
+
+-- Nova regra scanfExpression
+scanfExpression :: ParsecT [Token] MemoryState IO Token
+scanfExpression = do
+  scanTok <-  scanToken
+  liftIO $ putStr "Enter value: "
+  input <- liftIO getLine
+  return $ Scan
+
+readValue :: Token -> IO Token
+readValue (Id id pos) = do
+  putStrLn $ "Enter value for " ++ id ++ ":"
+  input <- getLine
+  case id of
+    "int" -> return $ IntValue (read input) pos
+    "float" -> return $ FloatValue (read input) pos
+    "bool" -> return $ BoolValue (read input == "true") pos
+    "string" -> return $ StringValue input pos
+    "char" -> return $ CharValue input pos
+    _ -> error "Unsupported type"
 
 valueLiteral :: ParsecT [Token] MemoryState IO Token
 valueLiteral =

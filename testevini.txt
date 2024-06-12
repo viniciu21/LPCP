@@ -1,0 +1,13 @@
+declaration:
+
+    problem_1: float;
+
+end_declaration
+
+
+main:
+
+
+
+end_main
+scan
