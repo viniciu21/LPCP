@@ -1,4 +1,4 @@
-{-# HLINT ignore "Use :" #-}
+-- {-# HLINT ignore "Use :" #-}
 {-# HLINT ignore "Redundant return" #-}
 {-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -8,6 +8,7 @@ module Main (main) where
 import Debug.Trace (trace)
 
 import Control.Monad.IO.Class
+import Control.Monad (when)
 import System.Environment
 import System.IO.Unsafe
 import Text.Parsec
@@ -290,6 +291,7 @@ stringValToken = tokenPrim show update_pos get_token
     get_token (StringValue x position) = Just (StringValue x position)
     get_token _ = Nothing
 
+boolValToken :: ParsecT [Token] u IO Token
 boolValToken = tokenPrim show update_pos get_token
   where
     get_token (BoolValue x position) = Just (BoolValue x position)
@@ -299,7 +301,7 @@ update_pos :: SourcePos -> Token -> [Token] -> SourcePos
 update_pos pos _ (tok : _) = pos -- necessita melhoria
 update_pos pos _ [] = pos
 
--- parsers para os não-terminais
+------------------------------- Parsers para os não-terminais -----------------------------
 
 program :: ParsecT [Token] MemoryState IO [Token]
 program = do
@@ -436,12 +438,34 @@ elseStmt =
 whileStmt :: ParsecT [Token] MemoryState IO [Token]
 whileStmt = do
   whileLiteral <- whileToken
-  expression <- ifParenthesisExpression
+  expressionTokens <- manyTill anyToken (lookAhead colonToken)
   colonLiteral <- colonToken
-  stmtsBlock <- stmts
+  stmtsBlock <- manyTill anyToken (lookAhead endWhileToken)
   endWhileLiteral <- endWhileToken
   semiCol <- semiColonToken
-  return ([whileLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
+  memoryState <- getState
+  input <- getInput
+
+  let loop = do
+        memoryState <- getState
+        setInput expressionTokens
+        expressionValue <- ifParenthesisExpression
+        let condition = evaluateCondition expressionValue
+        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ "Valor: " ++ show expressionValue ++ "Condição: " ++ show condition)
+        if condition then do
+            modifyState setFlagTrue
+            setInput stmtsBlock
+            _ <- many stmts
+            setInput input
+            loop
+        else setInput input
+
+  loop
+
+  modifyState setFlagFalse
+
+  -- O que retornar?
+  return ([whileLiteral] ++ expressionTokens ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
 ---- For
 forStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -862,14 +886,28 @@ compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
 
------------------------------ Tabela de símbolos -----------------------------
+----------------------------- Memória de execução -----------------------------
+
 type MemoryState = (Bool, [(Token, Token)], [(Token, [(Token, Token)], [Token])], [[(Token, (Token, Token))]], [[(Token, [(Token, Token)], [Token])]])
 
+----------------------------- Flag -----------------------------
+{-
+  Uma variável booliana que será acionada para fazer mudanças semânticas durante a análise sobre blocos de códigos, como subprogramas. Quando estiver falsa, o bloco de código será analisado apenas sintaticamente e, se necessário, guardado na memória.
+-}
+-- Function to set the flag to True
+setFlagTrue :: MemoryState -> MemoryState
+setFlagTrue (flag, vars, funcs, structs, callstack) = (True, vars, funcs, structs, callstack)
+
+-- Function to set the flag to False
+setFlagFalse :: MemoryState -> MemoryState
+setFlagFalse (flag, vars, funcs, structs, callstack) = (False, vars, funcs, structs, callstack)
+
+
+----------------------------- Tabela de símbolos -----------------------------
 {-
   A tabela de simbolos é uma lista de tuplas, onde cada tupla possui dois Tokens, um identificando a variavel e outro identificando seu valor:
           symtable = [(IdToken1, val1), (IdToken12, val2), ... , (IdToken1n, valn)]
 -}
-
 {-
   symtableGet recebe um Token ID (Id String (l,c)) referente a uma variável, e verifica se ela existe na tabela de símbolos e, caso exista, retorna seu valor.
 -}
