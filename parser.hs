@@ -1,4 +1,4 @@
-{-# HLINT ignore "Use :" #-}
+-- {-# HLINT ignore "Use :" #-}
 {-# HLINT ignore "Redundant return" #-}
 {-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -6,6 +6,7 @@
 module Main (main) where
 
 import Control.Monad.IO.Class
+import Control.Monad (when)
 import System.Environment
 import System.IO.Unsafe
 import Text.Parsec
@@ -429,12 +430,34 @@ elseStmt =
 whileStmt :: ParsecT [Token] MemoryState IO [Token]
 whileStmt = do
   whileLiteral <- whileToken
-  expression <- ifParenthesisExpression
+  expressionTokens <- manyTill anyToken (lookAhead colonToken)
   colonLiteral <- colonToken
-  stmtsBlock <- stmts
+  stmtsBlock <- manyTill anyToken (lookAhead endWhileToken)
   endWhileLiteral <- endWhileToken
   semiCol <- semiColonToken
-  return ([whileLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
+  memoryState <- getState
+  input <- getInput
+
+  let loop = do
+        memoryState <- getState
+        setInput expressionTokens
+        expressionValue <- ifParenthesisExpression
+        let condition = evaluateCondition expressionValue
+        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ "Valor: " ++ show expressionValue ++ "Condição: " ++ show condition)
+        if condition then do
+            modifyState setFlagTrue
+            setInput stmtsBlock
+            _ <- many stmts
+            setInput input
+            loop
+        else setInput input
+
+  loop
+
+  modifyState setFlagFalse
+
+  -- O que retornar?
+  return ([whileLiteral] ++ expressionTokens ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
 ---- For
 forStmt :: ParsecT [Token] MemoryState IO [Token]
