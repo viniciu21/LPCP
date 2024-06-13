@@ -1,0 +1,23 @@
+declaration:
+    entry: int;
+    count1: int;
+    count2: int;
+    count3: int;
+    count4: int;
+end_declaration
+
+main:
+    entry = scan("Informe um valor que deseja verificar");
+    while(entry >= 0):
+        if ((entry >= 0) && (entry <= 25)):
+            count1 = count1 + 1;
+        elif ((entry >= 26) && (entry <= 50)):
+            count2 = count2 + 1;
+        elif ((entry >= 51) && (entry <= 75)):
+            count3 = count3 + 1;
+        elif ((entry >= 76) && (entry <= 100)):
+            count4 = count4 + 1;
+        end_if;
+        entry = scan("Informe um valor que deseja verificar");
+    end_while;
+end_main

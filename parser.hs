@@ -451,12 +451,11 @@ whileStmt = do
         setInput expressionTokens
         expressionValue <- ifParenthesisExpression
         let condition = evaluateCondition expressionValue
-        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ "Valor: " ++ show expressionValue ++ "Condição: " ++ show condition)
+        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ " Valor: " ++ show expressionValue ++ " Condição: " ++ show condition)
         if condition then do
             modifyState setFlagTrue
             setInput stmtsBlock
             _ <- many stmts
-            setInput input
             loop
         else setInput input
 
@@ -856,7 +855,7 @@ getType :: Token -> MemoryState -> Token
 getType _ (_, [], _, _, _) = error "variable not found"
 getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _) =
   if idStr1 == idStr2
-    then trace ("Value found: " ++ show value) value
+    then value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [])
 
 getTypeStr :: Token -> String
@@ -946,6 +945,8 @@ symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack)
   | otherwise =
       let (flag', updatedSymtable, funcs', structs', callstack') = symtableRemove (id1, v1) (flag, listTail, funcs, structs, callstack)
        in (flag', (id2, v2) : updatedSymtable, funcs', structs', callstack')
+
+----------------------------- Main -----------------------------
 
 parser :: [Token] -> IO (Either ParseError [Token])
 parser tokens = runParserT program (False, [], [], [], []) "Error message" tokens

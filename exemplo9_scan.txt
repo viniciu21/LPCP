@@ -1,8 +1,5 @@
 declaration:
     a: int;
-    b: int;
-    c: int;
-    x: int;
 end_declaration
 
 main:
