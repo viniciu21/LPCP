@@ -5,6 +5,8 @@
 
 module Main (main) where
 
+import Debug.Trace (trace)
+
 import Control.Monad.IO.Class
 import System.Environment
 import System.IO.Unsafe
@@ -463,7 +465,7 @@ assign :: ParsecT [Token] MemoryState IO [Token]
 assign = do
   id <- idToken
   assignSym <- assignToken
-  value <- assignVal
+  value <- assignVal id
   state <- getState
   if not (compatible (getType id state) value)
     then fail "type mismatch"
@@ -473,32 +475,34 @@ assign = do
       liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show newState)
       return (id : assignSym : [value])
 
-assignVal :: ParsecT [Token] MemoryState IO Token
-assignVal =
+assignVal :: Token -> ParsecT [Token] MemoryState IO Token
+assignVal idScan =
   try
     assignValExpression
     <|> valueLiteralExpression
-    <|> scanfExpression
+    <|> scanfExpression idScan
 
+scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
+scanfExpression idScan = do
+  scanTok <- scanToken
+  lParenthesisLiteral <- leftParenthesisToken
+  scanString <- stringValToken
+  rParenthesisLiteral <- rightParenthesisToken
+  liftIO $ print scanString
+  scanValue <- readValue idScan
+  return scanValue
 
--- Nova regra scanfExpression
-scanfExpression :: ParsecT [Token] MemoryState IO Token
-scanfExpression = do
-  scanTok <-  scanToken
-  liftIO $ putStr "Enter value: "
-  input <- liftIO getLine
-  return $ Scan
-
-readValue :: Token -> IO Token
-readValue (Id id pos) = do
-  putStrLn $ "Enter value for " ++ id ++ ":"
-  input <- getLine
-  case id of
-    "int" -> return $ IntValue (read input) pos
-    "float" -> return $ FloatValue (read input) pos
-    "bool" -> return $ BoolValue (read input == "true") pos
-    "string" -> return $ StringValue input pos
-    "char" -> return $ CharValue input pos
+readValue :: Token -> ParsecT [Token] MemoryState IO Token
+readValue (Id idStr position) = do
+  state <- getState
+  let typeStr = getTypeStr (getType (Id idStr position) state)
+  inputTerminal <- liftIO getLine
+  case typeStr of
+    "int" -> return $ IntValue (read inputTerminal) position
+    "float" -> return $ FloatValue (read inputTerminal) position
+    "bool" -> return $ BoolValue (read inputTerminal == "true") position
+    "string" -> return $ StringValue inputTerminal position
+    "char" -> return $ CharValue inputTerminal position
     _ -> error "Unsupported type"
 
 valueLiteral :: ParsecT [Token] MemoryState IO Token
@@ -826,10 +830,18 @@ unaryEval notToken (BoolValue x p) = BoolValue (not x) p -- Not (!)
 -}
 getType :: Token -> MemoryState -> Token
 getType _ (_, [], _, _, _) = error "variable not found"
-getType (Id idStr1 pos1) (_, (Id idStr2 _, value): listTail, _, _, _) =
+getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _) =
   if idStr1 == idStr2
-    then value
+    then trace ("Value found: " ++ show value) value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [])
+
+getTypeStr :: Token -> String
+getTypeStr (IntValue _ _) = "int"
+getTypeStr (FloatValue _ _) = "float"
+getTypeStr (BoolValue _ _) = "bool"
+getTypeStr (StringValue _ _) = "string"
+getTypeStr (CharValue _ _) = "char"
+getTypeStr _ = error "deu ruim"
 
 {-
   Função utilizada para verificar se uma expressão é verdadeira ou falsa para poder entrar em um bloco de código. Utilizado para verificação de Ifs, elifs, whiles e for.
@@ -863,7 +875,7 @@ type MemoryState = (Bool, [(Token, Token)], [(Token, [(Token, Token)], [Token])]
 -}
 symtableGet :: (Token) -> MemoryState -> Maybe Token
 symtableGet _ (_, [], _, _, _) = fail "variable not found"
-symtableGet (Id idStr1 pos1) (_, (Id idStr2 pos2, value2): listTail, _, _, _)  =
+symtableGet (Id idStr1 pos1) (_, (Id idStr2 pos2, value2) : listTail, _, _, _) =
   if idStr1 == idStr2
     then Just value2
     else symtableGet (Id idStr1 pos1) (False, listTail, [], [], [])
@@ -880,11 +892,12 @@ symtableInsert symbol (flag, symtable, funcs, structs, callstack) = (flag, symta
 -}
 symtableUpdate :: (Token, Token) -> MemoryState -> MemoryState
 symtableUpdate _ (_, [], _, _, _) = error "variable not found"
-symtableUpdate (Id idStr1 pos1, value1) (flag, (Id idStr2 pos2, value2): listTail, funcs, structs, callstack)
+symtableUpdate (Id idStr1 pos1, value1) (flag, (Id idStr2 pos2, value2) : listTail, funcs, structs, callstack)
   | idStr1 == idStr2 = (flag, (Id idStr1 pos2, value1) : listTail, funcs, structs, callstack)
-  | otherwise = 
+  | otherwise =
       let (flag', updatedSymtable, funcs', structs', callstack') = symtableUpdate (Id idStr1 pos1, value1) (flag, listTail, funcs, structs, callstack)
-      in (flag', (Id idStr2 pos2, value2) : updatedSymtable, funcs', structs', callstack')
+       in (flag', (Id idStr2 pos2, value2) : updatedSymtable, funcs', structs', callstack')
+
 {-
   symtableRemove recebe uma tupla (Token ID, Token Value) e remove  ID e o valor na tabela de símbolos, se o Token ID já estiver na tabela
 -}
@@ -892,9 +905,9 @@ symtableRemove :: (Token, Token) -> MemoryState -> MemoryState
 symtableRemove _ (_, [], _, _, _) = error "variable not found"
 symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack)
   | id1 == id2 = (flag, listTail, funcs, structs, callstack)
-  | otherwise = 
+  | otherwise =
       let (flag', updatedSymtable, funcs', structs', callstack') = symtableRemove (id1, v1) (flag, listTail, funcs, structs, callstack)
-      in (flag', (id2, v2) : updatedSymtable, funcs', structs', callstack')
+       in (flag', (id2, v2) : updatedSymtable, funcs', structs', callstack')
 
 parser :: [Token] -> IO (Either ParseError [Token])
 parser tokens = runParserT program (False, [], [], [], []) "Error message" tokens

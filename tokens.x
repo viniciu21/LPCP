@@ -68,10 +68,10 @@ tokens :-
     "end_main"                                { \p s -> EndMain (getLC p) } 
     "true"                                    { \p s -> BoolValue True(getLC p) }
     "false"                                   { \p s -> BoolValue False(getLC p) }
-    "scan"                                    { \p s -> Scan (getLC p) }
+    "scan"                                    { \p s -> Scan s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
     $digit+                                   { \p s -> IntValue (read s) (getLC p) }
-    \" $alpha [$alpha $digit ! \_ \']* \"     { \p s -> StringValue s(getLC p) }
+    \" [$white $alpha $digit ! \_ \']* \"     { \p s -> StringValue s(getLC p) }
     \' $printable \'                          { \p s -> CharValue s(getLC p) } 
     $alpha [$alpha $digit \_ \']*             { \p s -> Id s (getLC p) }
 

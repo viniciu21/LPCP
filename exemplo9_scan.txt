@@ -1,0 +1,10 @@
+declaration:
+    a: int;
+    b: int;
+    c: int;
+    x: int;
+end_declaration
+
+main:
+    a = scan("Oi ");
+end_main
