@@ -262,6 +262,12 @@ scanToken = tokenPrim show update_pos get_token -- ID
     get_token (Scan x position) = Just (Scan x position)
     get_token _ = Nothing
 
+printToken :: ParsecT [Token] MemoryState IO Token
+printToken = tokenPrim show update_pos get_token -- ID
+  where
+    get_token (Print x position) = Just (Print x position)
+    get_token _ = Nothing
+  
 ----------------------------- Tipos -----------------------------
 typeToken :: ParsecT [Token] MemoryState IO Token
 typeToken = tokenPrim show update_pos get_token
@@ -367,6 +373,35 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
+    <|> printStmt
+
+-- Parser para a instrução print
+printStmt :: ParsecT [Token] MemoryState IO [Token]
+printStmt = do
+  printToken <- printToken
+  lParenthesisLiteral <- leftParenthesisToken
+  value <- printStringStmt <|> printExp
+  rParenthesisLiteral <- rightParenthesisToken
+  semiCol <- semiColonToken
+  liftIO $ print value
+  return ([printToken] ++ [lParenthesisLiteral] ++ value ++ [rParenthesisLiteral] ++ [semiCol])
+
+printStringStmt :: ParsecT [Token] MemoryState IO [Token]
+printStringStmt = do 
+  stringTok <- stringValToken
+  return [stringTok]
+
+printExp :: ParsecT [Token] MemoryState IO [Token]
+printExp =  
+  try 
+    printStringStmt
+    <|> printValue
+
+printValue :: ParsecT [Token] MemoryState IO [Token]
+printValue = do 
+  id <- idToken
+  valueToken <- assignVal id
+  return [valueToken]
 
 ---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] MemoryState IO [Token]

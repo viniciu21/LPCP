@@ -69,6 +69,7 @@ tokens :-
     "true"                                    { \p s -> BoolValue True(getLC p) }
     "false"                                   { \p s -> BoolValue False(getLC p) }
     "scan"                                    { \p s -> Scan s (getLC p) }
+    "print"                                   { \p s -> Print s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
     $digit+                                   { \p s -> IntValue (read s) (getLC p) }
     \" [$white $alpha $digit ! \_ \']* \"     { \p s -> StringValue s(getLC p) }
@@ -125,6 +126,7 @@ data Token =
     StringValue String (Int, Int)                      |
     CharValue String (Int, Int)                        |
     Scan String (Int, Int)                             |
+    Print String (Int, Int)                            |
     BoolValue Bool (Int, Int)             
     deriving (Eq,Show)
 

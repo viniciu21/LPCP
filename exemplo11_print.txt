@@ -1,0 +1,8 @@
+declaration:
+    entry: int;
+end_declaration
+
+main:
+    entry = 10;
+    print(entry);
+end_main
