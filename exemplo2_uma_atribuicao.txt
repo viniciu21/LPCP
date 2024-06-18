@@ -1,7 +1,11 @@
 declaration:
     a: int;
+    c: int;
 end_declaration
 
 main:
+    #a: int;
+    b: int;
+    d: int;
     a = 10;
 end_main

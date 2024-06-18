@@ -5,7 +5,7 @@
 <decls> -> <decl> ';'
 	    | <decl> ';' <decls>
 
-<decl> -> <var_decl> | <type_decl> |<const_decl> | <func_decl>
+<decl> -> <var_decl> | <type_decl> |<const_decl> | <func_decl> | <list_decl>
 
 <var_decl> ->  <IDs> ':' <type> 
 
@@ -14,6 +14,8 @@
 <const_decl> -> CONST ID '=' <value> 
 
 <func_decl> -> ID ':' <types> -> <type> 
+
+<list_decl> -> ID [<value>]: <type>;
 
 <types> -> <type>
 	     | <type> ',' <types> 

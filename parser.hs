@@ -304,24 +304,43 @@ update_pos pos _ [] = pos
 
 program :: ParsecT [Token] MemoryState IO [Token]
 program = do
-  decl <- declarationToken
-  colonD <- colonToken
-  decls <- decls
-  endDecl <- endDeclarationToken
+  declBlock' <- declBlock
   main <- mainToken
   colonM <- colonToken
   stmts <- stmts
   endMain <- endMainToken
   eof
-  return ([decl] ++ [colonD] ++ decls ++ [endDecl] ++ [main] ++ [colonM] ++ stmts ++ [endMain])
+  return (declBlock' ++ [main] ++ [colonM] ++ stmts ++ [endMain])
 
 ----------------------------- Declarações -----------------------------
 
+declBlock :: ParsecT [Token] MemoryState IO [Token]
+declBlock =
+  try
+    declBlockWithVars
+    <|> declBlockWithoutVars
+
+declBlockWithVars :: ParsecT [Token] MemoryState IO [Token]
+declBlockWithVars = do
+  decl <- declarationToken
+  colonD <- colonToken
+  decls <- decls
+  endDecl <- endDeclarationToken
+  return ([decl] ++ [colonD] ++ decls ++ [endDecl])
+
+declBlockWithoutVars :: ParsecT [Token] MemoryState IO [Token]
+declBlockWithoutVars = do
+  decl <- declarationToken
+  colonD <- colonToken
+  endDecl <- endDeclarationToken
+  return ([decl] ++ [colonD] ++ [endDecl])
+
 decls :: ParsecT [Token] MemoryState IO [Token]
-decls = do
-  first <- decl
-  next <- remainingDecls
-  return (first ++ next)
+decls =
+  do
+    first <- declStmt
+    next <- remainingDecls
+    return (first ++ next)
 
 remainingDecls :: ParsecT [Token] MemoryState IO [Token]
 remainingDecls =
@@ -330,8 +349,8 @@ remainingDecls =
   )
     <|> return []
 
-decl :: ParsecT [Token] MemoryState IO ([Token])
-decl =
+declStmt :: ParsecT [Token] MemoryState IO ([Token])
+declStmt =
   try
     varDeclStmt
 
@@ -354,6 +373,7 @@ varDeclStmt = do
 stmts :: ParsecT [Token] MemoryState IO [Token]
 stmts = do
   first <- stmt
+  liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show first)
   next <- remainingStmts
   return (first ++ next)
 
@@ -371,6 +391,7 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
+    <|> decls
 
 ---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] MemoryState IO [Token]
