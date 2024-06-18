@@ -5,10 +5,9 @@
 
 module Main (main) where
 
-import Debug.Trace (trace)
-
-import Control.Monad.IO.Class
 import Control.Monad (when)
+import Control.Monad.IO.Class
+import Debug.Trace (trace)
 import System.Environment
 import System.IO.Unsafe
 import Text.Parsec
@@ -332,7 +331,12 @@ remainingDecls =
     <|> return []
 
 decl :: ParsecT [Token] MemoryState IO ([Token])
-decl = do
+decl =
+  try
+    varDeclStmt
+
+varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
+varDeclStmt = do
   id <- idToken
   colon <- colonToken
   varType <- typeToken
@@ -452,12 +456,13 @@ whileStmt = do
         expressionValue <- ifParenthesisExpression
         let condition = evaluateCondition expressionValue
         liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ " Valor: " ++ show expressionValue ++ " Condição: " ++ show condition)
-        if condition then do
+        if condition
+          then do
             modifyState setFlagTrue
             setInput stmtsBlock
             _ <- many stmts
             loop
-        else setInput input
+          else setInput input
 
   loop
 
@@ -900,7 +905,6 @@ setFlagTrue (flag, vars, funcs, structs, callstack) = (True, vars, funcs, struct
 -- Function to set the flag to False
 setFlagFalse :: MemoryState -> MemoryState
 setFlagFalse (flag, vars, funcs, structs, callstack) = (False, vars, funcs, structs, callstack)
-
 
 ----------------------------- Tabela de símbolos -----------------------------
 {-
