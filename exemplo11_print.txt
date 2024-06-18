@@ -4,5 +4,5 @@ end_declaration
 
 main:
     entry = 1;
-    print(1+1+1);
+    print(entry);
 end_main
