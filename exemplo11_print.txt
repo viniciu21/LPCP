@@ -3,6 +3,6 @@ declaration:
 end_declaration
 
 main:
-    entry = 10;
-    print(entry);
+    entry = 1;
+    print(1+1+1);
 end_main

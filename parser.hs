@@ -380,27 +380,22 @@ printStmt :: ParsecT [Token] MemoryState IO [Token]
 printStmt = do
   printToken <- printToken
   lParenthesisLiteral <- leftParenthesisToken
-  value <- printStringStmt <|> printExp
+  value <- printStringStmt <|> printExp2
   rParenthesisLiteral <- rightParenthesisToken
   semiCol <- semiColonToken
-  liftIO $ print value
+  liftIO $ print $ show value
   return ([printToken] ++ [lParenthesisLiteral] ++ value ++ [rParenthesisLiteral] ++ [semiCol])
 
 printStringStmt :: ParsecT [Token] MemoryState IO [Token]
 printStringStmt = do 
   stringTok <- stringValToken
+  liftIO $ print stringTok
   return [stringTok]
 
-printExp :: ParsecT [Token] MemoryState IO [Token]
-printExp =  
-  try 
-    printStringStmt
-    <|> printValue
-
-printValue :: ParsecT [Token] MemoryState IO [Token]
-printValue = do 
-  id <- idToken
-  valueToken <- assignVal id
+printExp2 :: ParsecT [Token] MemoryState IO [Token]
+printExp2 = do 
+  --liftIO $ liftIO (putStrLn $ "entrou aqui")
+  valueToken <- assignValExpression
   return [valueToken]
 
 ---- IF-ELIF-ELSE
@@ -594,8 +589,9 @@ arithmeticExpression =
 -- + | -
 plusMinusExpression :: ParsecT [Token] MemoryState IO Token
 plusMinusExpression = do
+  --liftIO $ liftIO (putStrLn $ "entrou aqui4")
   term' <- term
-  -- liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
+  liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
   result <- arithmeticExpressionRemaining term'
   return result
 
@@ -611,6 +607,7 @@ arithmeticExpressionRemaining termIn =
 -- < | <= | == | > | >= | !=
 relationalExpression :: ParsecT [Token] MemoryState IO Token
 relationalExpression = do
+  --liftIO $ liftIO (putStrLn $ "entrou aqui3")
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
@@ -688,7 +685,9 @@ ifParenthesisExpression = do
 
 idTokenExpression :: ParsecT [Token] MemoryState IO Token
 idTokenExpression = do
+  --liftIO $ liftIO (putStrLn $ "entrou aqui2")
   idToken' <- idToken
+  --liftIO $ print $ show idToken'
   symtable <- getState
   case symtableGet idToken' symtable of
     Just val -> return val
@@ -706,6 +705,7 @@ term =
 
 termExpression :: ParsecT [Token] MemoryState IO Token
 termExpression = do
+  --liftIO $ liftIO (putStrLn $ "entrou aqui5")
   factor' <- factor
   result <- termRemaining factor'
   return result
