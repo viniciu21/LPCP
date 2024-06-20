@@ -1,0 +1,86 @@
+<program> -> <decl_sec> <subps> <main>
+
+<decl_sec> -> | BEGIN_DECL <decls> END_DECL
+
+<decls> -> <decl> ';'
+	    | <decl> ';' <decls>
+
+<decl> -> <var_decl> | <type_decl> |<const_decl> | <func_decl> | <list_decl>
+
+<var_decl> ->  <IDs> ':' <type> 
+
+<IDs> -> ID | ID ',' <IDs>
+
+<const_decl> -> CONST ID '=' <value> 
+
+<func_decl> -> ID ':' <types> -> <type> 
+
+<list_decl> -> ID [<value>]: <type>;
+
+<types> -> <type>
+	     | <type> ',' <types> 
+
+<type_decl> -> typedef struct '{' <decls> '}' ID 
+			 | typedef ID ID
+
+<value> -> INT | CHAR | STRING | FLOAT | BOOL 
+
+<type> -> <int> | <char> | <string> | <float> | <bool>
+
+<subps> -> BEGIN_FUNC ID (<IDs>) ':' <stmts> END_FUNC
+
+<main> -> BEGIN_MAIN ':' <stmts> END_MAIN
+
+<stmts> -> <stmt>
+		| <stmt> ; <stmts> 
+<stmt> -> <decls> | <for> | <while> | <if> | <assign> | <rtn>
+
+<rtn> -> "return" <assignValExpression> ";"
+
+<assignVal> -> ID '=' <value> 
+	   | ID '=' <assignValExpression>
+	   | ID '=' <scan>
+
+<assignValExpression> -> <relationalExpression>
+				| <arithmeticExpression>
+				| <logicalExpression>
+				| <parenthesisExpression>
+				| <call> 
+				| ID
+
+<parenthesisExpression> -> '(' <assignValExpression> ')'
+
+<logicalExpression> -> '(' <relationalExpression> ')' '&&' '(' <relationalExpression> ')' 
+					| '(' <relationalExpression> ')' '||' '(' <relationalExpression> ')'
+					| '!' (BOOL | <parenthesisExpression>)
+
+<relationalExpression> -> (<arithmeticExpression> | <parenthesisExpression>) '<'  (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '<=' (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '>'  (<arithmeticExpression> | <parenthesisExpression>) 
+						| (<arithmeticExpression> | <parenthesisExpression>) '>=' (<arithmeticExpression> | <parenthesisExpression>) 
+						| (<arithmeticExpression> | <parenthesisExpression>) '==' (<arithmeticExpression> | <parenthesisExpression>)
+						| (<arithmeticExpression> | <parenthesisExpression>) '!=' (<arithmeticExpression> | <parenthesisExpression>)
+
+<arithmeticExpression> -> <term> '+' <assignValExpression>
+						| <term> '-' <assignValExpression>
+						| <term>
+
+<term> -> <factor> '*' <term>
+		| <factor> '/' <term>
+		| <factor> '//' <term>
+		| <factor>
+
+<factor> -> <exponential> '**' <factor>
+          | <exponential>
+<exponential> -> ID | <call> | <value>
+
+<for> -> FOR '(' <assign> ';' <assignValExpression> ';' <assign> ') ':' <stmts> END_FOR
+<if> -> IF '('<assignValExpression')' ':' <stmts> <elifs> <else> END_IF
+<elifs> -> <elif>
+		| <elif> <elifs>
+<elif> -> ELIF '(' <assignValExpression> ')' ':' <stmts>
+<else> -> ELSE ':' <stmts>
+<while> -> WHILE '(' <assignValExpression> ')' ':' <stmts> END_WHILE
+
+<scan> -> SCAN '(' <string> ')'
+<print> -> PRINT '(' [ (<string> | ID) ',' (ID | <string>)] ')'

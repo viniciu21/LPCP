@@ -1,2 +1,12 @@
 /LPCP
 /parserV0
+LiteralTokens.hi
+LiteralTokens.o
+MemoryState.hi
+MemoryState.o
+Utils.hi
+Utils.o
+parser.hi
+parser.o
+Expressions.hi
+Expressions.o
