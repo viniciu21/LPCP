@@ -16,7 +16,9 @@ tokens :-
     "#".*                                     ;
     ":"                                       { \p s -> Colon (getLC p) } 
     ";"                                       { \p s -> SemiColon (getLC p) } 
-    ","                                       { \p s -> Comma (getLC p) } 
+    ","                                       { \p s -> Comma (getLC p) }
+    "["                                       { \p s -> LeftBracket (getLC p)}
+    "]"                                       { \p s -> RightBracket (getLC p)}
     "("                                       { \p s -> LeftParenthesis (getLC p) } 
     ")"                                       { \p s -> RightParenthesis (getLC p) } 
     "{"                                       { \p s -> LeftCurlyBrackets (getLC p) } 
@@ -82,6 +84,8 @@ data Token =
     Colon (Int, Int)                                   |
     SemiColon (Int, Int)                               |
     Comma (Int, Int)                                   |
+    LeftBracket (Int, Int)                             |
+    RightBracket (Int, Int)                            |
     LeftParenthesis (Int, Int)                         |
     RightParenthesis (Int, Int)                        |
     LeftCurlyBrackets (Int, Int)                       |
