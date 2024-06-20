@@ -20,4 +20,9 @@ main:
         end_if;
         entry = scan("Informe um valor que deseja verificar");
     end_while;
+
+    print(count1);
+    print(count2);
+    print(count3);
+    print(count4);
 end_main

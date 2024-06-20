@@ -383,20 +383,20 @@ printStmt = do
   value <- printStringStmt <|> printExp2
   rParenthesisLiteral <- rightParenthesisToken
   semiCol <- semiColonToken
-  liftIO $ print $ show value
-  return ([printToken] ++ [lParenthesisLiteral] ++ value ++ [rParenthesisLiteral] ++ [semiCol])
+  liftIO $ printTypeValue value
+  return ([printToken] ++ [lParenthesisLiteral] ++ [value] ++ [rParenthesisLiteral] ++ [semiCol])
 
-printStringStmt :: ParsecT [Token] MemoryState IO [Token]
+printStringStmt :: ParsecT [Token] MemoryState IO Token
 printStringStmt = do 
   stringTok <- stringValToken
-  liftIO $ print stringTok
-  return [stringTok]
+  -- liftIO $ print stringTok
+  return stringTok
 
-printExp2 :: ParsecT [Token] MemoryState IO [Token]
+printExp2 :: ParsecT [Token] MemoryState IO Token
 printExp2 = do 
   --liftIO $ liftIO (putStrLn $ "entrou aqui")
   valueToken <- assignValExpression
-  return [valueToken]
+  return valueToken
 
 ---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -544,6 +544,8 @@ scanfExpression idScan = do
   liftIO $ print scanString
   scanValue <- readValue idScan
   return scanValue
+
+ 
 
 readValue :: Token -> ParsecT [Token] MemoryState IO Token
 readValue (Id idStr position) = do
@@ -900,6 +902,25 @@ getTypeStr (BoolValue _ _) = "bool"
 getTypeStr (StringValue _ _) = "string"
 getTypeStr (CharValue _ _) = "char"
 getTypeStr _ = error "deu ruim"
+
+printTypeValue :: Token -> IO String
+printTypeValue (IntValue b _) = do
+    liftIO $ putStrLn $ show b
+    return $ show b
+printTypeValue (StringValue b _) = do
+    liftIO $ putStrLn $ show b
+    return $ show b
+printTypeValue (FloatValue b _) = do
+    liftIO $ putStrLn $ show b
+    return $ show b
+printTypeValue (BoolValue b _ ) = do
+    liftIO $ putStrLn $ show b
+    return $ show b
+printTypeValue (CharValue b _ ) = do
+    liftIO $ putStrLn $ show b
+    return $ show b
+printTypeValue _ = error "nao funfou"
+
 
 {-
   Função utilizada para verificar se uma expressão é verdadeira ou falsa para poder entrar em um bloco de código. Utilizado para verificação de Ifs, elifs, whiles e for.
