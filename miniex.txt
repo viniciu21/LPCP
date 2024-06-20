@@ -1,0 +1,7 @@
+declaration:
+    lista[2]: int; 
+end_declaration
+
+main:
+    lista = 10;
+end_main

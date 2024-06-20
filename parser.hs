@@ -108,6 +108,20 @@ commaToken = tokenPrim show update_pos get_token
     get_token (Comma position) = Just (Comma position)
     get_token _ = Nothing
 
+-- [ LeftBracket
+leftBracketToken :: ParsecT [Token] MemoryState IO Token
+leftBracketToken = tokenPrim show update_pos get_token
+  where
+    get_token (LeftBracket position) = Just (LeftBracket position)
+    get_token _ = Nothing
+
+-- ] RightBracket
+rightBracketToken :: ParsecT [Token] MemoryState IO Token
+rightBracketToken = tokenPrim show update_pos get_token
+  where
+    get_token (RightBracket position) = Just (RightBracket position)
+    get_token _ = Nothing
+
 -- ( LeftParenthesis
 leftParenthesisToken :: ParsecT [Token] MemoryState IO Token
 leftParenthesisToken = tokenPrim show update_pos get_token
@@ -358,7 +372,8 @@ remainingDecls =
 declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
-    varDeclStmt
+    varDeclStmt 
+    <|> listDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
@@ -373,6 +388,26 @@ varDeclStmt = do
   -- liftIO (print state)
 
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
+listDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
+listDeclStmt = do
+  id <- idToken
+  leftBrack <- leftBracketToken
+  valList <- intValToken
+  rightBrack <- rightBracketToken
+  colon <- colonToken
+  varType <- typeToken
+  semiCol <- semiColonToken
+
+  
+
+  updateState (symtableInsert (id, getDefaultValue varType))
+  state <- getState
+  liftIO (putStrLn $ "Declaração de variável: " ++ show id ++ show state)
+  -- liftIO (print state)
+
+  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
 
 ----------------------------- Code -----------------------------
 

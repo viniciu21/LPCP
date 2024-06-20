@@ -1,2 +1,9 @@
 /LPCP
 /parserV0
+parser
+parser.exe
+Tokens.hi
+tokens.hi
+Tokens.hs
+Tokens.o
+tokens.o
