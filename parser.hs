@@ -266,7 +266,7 @@ printToken = tokenPrim show update_pos get_token -- ID
   where
     get_token (Print x position) = Just (Print x position)
     get_token _ = Nothing
-  
+
 ----------------------------- Tipos -----------------------------
 typeToken :: ParsecT [Token] MemoryState IO Token
 typeToken = tokenPrim show update_pos get_token
@@ -379,7 +379,7 @@ varDeclStmt = do
 stmts :: ParsecT [Token] MemoryState IO [Token]
 stmts = do
   first <- stmt
-  liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show first)
+  -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show first)
   next <- remainingStmts
   return (first ++ next)
 
@@ -412,17 +412,16 @@ printStmt = do
   return ([printToken] ++ [lParenthesisLiteral] ++ [value] ++ [rParenthesisLiteral] ++ [semiCol])
 
 printStringStmt :: ParsecT [Token] MemoryState IO Token
-printStringStmt = do 
+printStringStmt = do
   stringTok <- stringValToken
   -- liftIO $ print stringTok
   return stringTok
 
 printExp2 :: ParsecT [Token] MemoryState IO Token
-printExp2 = do 
-  --liftIO $ liftIO (putStrLn $ "entrou aqui")
+printExp2 = do
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui")
   valueToken <- assignValExpression
   return valueToken
-   
 
 ---- IF-ELIF-ELSE
 ifStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -520,19 +519,48 @@ whileStmt = do
 
   modifyState setFlagFalse
 
-  -- O que retornar?
   return ([whileLiteral] ++ expressionTokens ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
 ---- For
 forStmt :: ParsecT [Token] MemoryState IO [Token]
 forStmt = do
   forLiteral <- forToken
-  expression <- forExpression
+  leftParenthesis <- leftParenthesisToken
+  assign' <- assign
+  semiCol' <- semiColonToken
+  expressionTokens <- manyTill anyToken (lookAhead semiColonToken)
+  semiCol'' <- semiColonToken
+  updateAssign <- manyTill anyToken (lookAhead rightParenthesisToken)
+  rightParenthesis <- rightParenthesisToken
   colon' <- colonToken
-  stmts' <- stmts
+  stmtsBlock <- manyTill anyToken (lookAhead endForToken)
   endFor <- endForToken
   semiCol <- semiColonToken
-  return ([forLiteral] ++ expression ++ [colon'] ++ stmts' ++ [endFor] ++ [semiCol])
+
+  memoryState <- getState
+  input <- getInput
+
+  let loop = do
+        memoryState <- getState
+        setInput expressionTokens
+        expressionValue <- relatOrLogicExpression
+        let condition = evaluateCondition expressionValue
+        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ " Valor: " ++ show expressionValue ++ " Condição: " ++ show condition)
+        if condition
+          then do
+            modifyState setFlagTrue
+            setInput stmtsBlock
+            _ <- many stmts
+            setInput updateAssign
+            assign'' <- assign
+            loop
+          else setInput input
+
+  loop
+
+  modifyState setFlagFalse
+
+  return ([forLiteral] ++ [colon'] ++ stmtsBlock ++ [endFor] ++ [semiCol])
 
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -572,8 +600,6 @@ scanfExpression idScan = do
   scanValue <- readValue idScan
   return scanValue
 
- 
-
 readValue :: Token -> ParsecT [Token] MemoryState IO Token
 readValue (Id idStr position) = do
   state <- getState
@@ -584,10 +610,10 @@ readValue (Id idStr position) = do
     "float" -> return $ FloatValue (read inputTerminal) position
     "bool" -> return $ BoolValue (read inputTerminal == "true") position
     "string" -> return $ StringValue inputTerminal position
-    "char" -> 
-      if length inputTerminal == 1 
-      then return $ CharValue (head inputTerminal) position
-      else fail "Input for char must be a single character"
+    "char" ->
+      if length inputTerminal == 1
+        then return $ CharValue (head inputTerminal) position
+        else fail "Input for char must be a single character"
     _ -> error "Unsupported type"
 
 valueLiteral :: ParsecT [Token] MemoryState IO Token
@@ -621,9 +647,9 @@ arithmeticExpression =
 -- + | -
 plusMinusExpression :: ParsecT [Token] MemoryState IO Token
 plusMinusExpression = do
-  --liftIO $ liftIO (putStrLn $ "entrou aqui4")
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui4")
   term' <- term
-  liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
+  -- liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
   result <- arithmeticExpressionRemaining term'
   return result
 
@@ -639,7 +665,7 @@ arithmeticExpressionRemaining termIn =
 -- < | <= | == | > | >= | !=
 relationalExpression :: ParsecT [Token] MemoryState IO Token
 relationalExpression = do
-  --liftIO $ liftIO (putStrLn $ "entrou aqui3")
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui3")
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
@@ -717,9 +743,9 @@ ifParenthesisExpression = do
 
 idTokenExpression :: ParsecT [Token] MemoryState IO Token
 idTokenExpression = do
-  --liftIO $ liftIO (putStrLn $ "entrou aqui2")
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui2")
   idToken' <- idToken
-  --liftIO $ print $ show idToken'
+  -- liftIO $ print $ show idToken'
   symtable <- getState
   case symtableGet idToken' symtable of
     Just val -> return val
@@ -737,7 +763,7 @@ term =
 
 termExpression :: ParsecT [Token] MemoryState IO Token
 termExpression = do
-  --liftIO $ liftIO (putStrLn $ "entrou aqui5")
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui5")
   factor' <- factor
   result <- termRemaining factor'
   return result
@@ -830,7 +856,7 @@ binaryLogicalOperatorLiteral =
 -}
 getDefaultValue :: Token -> Token
 getDefaultValue (Type "int" (l, c)) = IntValue 0 (l, c)
-getDefaultValue (Type "char" (l, c)) = CharValue '\0' (l, c)  -- Using null character as default
+getDefaultValue (Type "char" (l, c)) = CharValue '\0' (l, c) -- Using null character as default
 getDefaultValue (Type "string" (l, c)) = StringValue "" (l, c)
 getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
 getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
@@ -935,22 +961,21 @@ getTypeStr _ = error "deu ruim"
 
 printTypeValue :: Token -> IO String
 printTypeValue (IntValue b _) = do
-    liftIO $ putStrLn $ show b
-    return $ show b
+  liftIO $ putStrLn $ show b
+  return $ show b
 printTypeValue (StringValue b _) = do
-    putStrLn b
-    return b
+  putStrLn b
+  return b
 printTypeValue (FloatValue b _) = do
-    liftIO $ putStrLn $ show b
-    return $ show b
-printTypeValue (BoolValue b _ ) = do
-    liftIO $ putStrLn $ show b
-    return $ show b
+  liftIO $ putStrLn $ show b
+  return $ show b
+printTypeValue (BoolValue b _) = do
+  liftIO $ putStrLn $ show b
+  return $ show b
 printTypeValue (CharValue b _) = do
-    putStrLn [b]  -- Print the character directly
-    return [b]    -- Return the character as a String
+  putStrLn [b] -- Print the character directly
+  return [b] -- Return the character as a String
 printTypeValue _ = error "nao funfou"
-
 
 {-
   Função utilizada para verificar se uma expressão é verdadeira ou falsa para poder entrar em um bloco de código. Utilizado para verificação de Ifs, elifs, whiles e for.

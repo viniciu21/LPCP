@@ -11,9 +11,11 @@ $files = @(
     ".\exemplo8_for_stmts.txt",
     # ".\exemplo9_scan.txt",
     ".\exemplo10_problema_2.txt"
+    ".\exemplo11_print.txt"
 )
 
 # Itere sobre cada arquivo e execute o parser.exe com o arquivo atual
 foreach ($file in $files) {
+    Write-Host "Running $file"
     & $parserPath $file
 }

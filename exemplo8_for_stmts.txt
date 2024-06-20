@@ -6,7 +6,7 @@ declaration:
 end_declaration
 
 main:
-    for(x = 1; x < 10; x = x + 1):
-        a = 5;
+    for(x = 0; x < 10; x = x + 1):
+        a = a + 5;
     end_for;
 end_main
