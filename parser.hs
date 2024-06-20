@@ -584,7 +584,10 @@ readValue (Id idStr position) = do
     "float" -> return $ FloatValue (read inputTerminal) position
     "bool" -> return $ BoolValue (read inputTerminal == "true") position
     "string" -> return $ StringValue inputTerminal position
-    "char" -> return $ CharValue inputTerminal position
+    "char" -> 
+      if length inputTerminal == 1 
+      then return $ CharValue (head inputTerminal) position
+      else fail "Input for char must be a single character"
     _ -> error "Unsupported type"
 
 valueLiteral :: ParsecT [Token] MemoryState IO Token
@@ -827,7 +830,7 @@ binaryLogicalOperatorLiteral =
 -}
 getDefaultValue :: Token -> Token
 getDefaultValue (Type "int" (l, c)) = IntValue 0 (l, c)
-getDefaultValue (Type "char" (l, c)) = CharValue "" (l, c)
+getDefaultValue (Type "char" (l, c)) = CharValue '\0' (l, c)  -- Using null character as default
 getDefaultValue (Type "string" (l, c)) = StringValue "" (l, c)
 getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
 getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
@@ -935,17 +938,17 @@ printTypeValue (IntValue b _) = do
     liftIO $ putStrLn $ show b
     return $ show b
 printTypeValue (StringValue b _) = do
-    liftIO $ putStrLn $ show b
-    return $ show b
+    putStrLn b
+    return b
 printTypeValue (FloatValue b _) = do
     liftIO $ putStrLn $ show b
     return $ show b
 printTypeValue (BoolValue b _ ) = do
     liftIO $ putStrLn $ show b
     return $ show b
-printTypeValue (CharValue b _ ) = do
-    liftIO $ putStrLn $ show b
-    return $ show b
+printTypeValue (CharValue b _) = do
+    putStrLn [b]  -- Print the character directly
+    return [b]    -- Return the character as a String
 printTypeValue _ = error "nao funfou"
 
 

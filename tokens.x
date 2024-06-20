@@ -3,6 +3,7 @@ module Tokens where
     
 import System.IO
 import System.IO.Unsafe
+import CleanString (cleanString, cleanChar)
 }
 
 %wrapper "posn"
@@ -72,8 +73,8 @@ tokens :-
     "print"                                   { \p s -> Print s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
     $digit+                                   { \p s -> IntValue (read s) (getLC p) }
-    \" [$white $alpha $digit ! \_ \']* \"     { \p s -> StringValue s(getLC p) }
-    \' $printable \'                          { \p s -> CharValue s(getLC p) } 
+    \" [$white $alpha $digit ! \_ \']* \"     { \p s -> StringValue (cleanString s) (getLC p) }
+    \' $printable \'                          { \p s -> CharValue (cleanChar s) (getLC p) } 
     $alpha [$alpha $digit \_ \']*             { \p s -> Id s (getLC p) }
 
 
@@ -124,7 +125,7 @@ data Token =
     IntValue Int (Int, Int)                            |
     FloatValue Float (Int, Int)                        |
     StringValue String (Int, Int)                      |
-    CharValue String (Int, Int)                        |
+    CharValue Char (Int, Int)                        |
     Scan String (Int, Int)                             |
     Print String (Int, Int)                            |
     BoolValue Bool (Int, Int)             
