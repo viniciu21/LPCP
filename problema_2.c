@@ -5,7 +5,7 @@ int main()
     int aux_2 = 0;
     int aux_3 = 0;
     int aux_4 = 0;
-    wile(scanf("%d", ai_papai) >= 0)
+    while(scanf("%d", ai_papai) >= 0)
     {
         if (ai_papai >= 0 && ai_papai <= 25)
             aux_1++;
