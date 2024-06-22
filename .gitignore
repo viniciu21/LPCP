@@ -10,3 +10,7 @@ parser.hi
 parser.o
 Expressions.hi
 Expressions.o
+Tokens.o
+Tokens.hs
+tokens.o
+tokens.hs

@@ -1,0 +1,102 @@
+declaration:
+    multiplicacao_de_duas_matrizes : matrix, matrix -> int;
+    soma_de_duas_matrizes : matrix, matrix -> int; 
+    print_matriz : matrix -> void;
+    resultado_soma : matrix;
+    resultado_multiplicacao : matrix;
+    i : int;
+    j : int; 
+    linhas_um : int; 
+    colunas_um : int; 
+    linhas_dois : int; 
+    colunas_dois : int; 
+    #pensar na matriz de float
+end_declaration
+
+
+func multiplicacao_de_duas_matrizes(matriz_um[A][B], matriz_dois[C][D]):
+    matrix resultado [B][D];
+
+    for( i = 0; i < B; i = i + 1) : 
+        for(j = 0; j < D; j = j + 1): 
+            resultado[i][j] = matriz_um[i][j] * matriz_dois[j][i];
+        end_for
+    end_for
+
+    return resultado; 
+end_func
+
+func soma_de_duas_matrizes (matriz_um[A][B], matriz_dois[C][D]):
+    matrix resultado [A][B];
+
+    for( i = 0; i < A; i = i + 1) : 
+        for(j = 0; j < B; j = j + 1): 
+            resultado_soma[i][j] = matriz_um[i][j] + matriz_dois[i][j];
+        end_for
+    end_for
+
+    return resultado;
+end_func
+
+func print_matriz (matriz[N][M]):
+    for(i = 0; i < N; i = i + 1):
+        for(j = 0; j < M; j = j +1):
+            print(matriz[i][j]);
+            print(" ");
+        end_for
+        print("/n");
+    end_for
+
+end_func
+
+
+main: 
+
+    linhas_um = scan("qual o número de linhas da matriz um?");
+    colunas_um = scan("qual o número de colunas da matriz um?"); 
+
+    matriz_um[linhas_um][colunas_um] int : matrix;
+
+    print("Digite aqui os valores da matriz um: ");
+
+    for(i = 0; i < linhas_um; i = i + 1 ) : 
+        for(j = 0; j < colunas_um; j = j + 1):
+            matriz_um[i][j] = scan(); 
+        end_for
+    end_for
+
+    linhas_dois = scan("qual o número de linhas da matriz dois?");
+    colunas_dois = scan("qual o número de colunas da matriz dois?"); 
+
+    matriz_dois[linhas_dois][colunas_dois] int : matrix;
+
+    print("Digite aqui os valores da matriz dois: ");
+
+    for(i = 0; i <linhas_dois; i = i + 1 ) : 
+        for(j = 0; j < colunas_dois; j = j + 1):
+            matriz_um[i][j] = scan(); 
+        end_for
+    end_for
+
+    if(linhas_um == linhas_dois &&  colunas_um == colunas_dois):
+        resultado_soma[linhas_um][colunas_dois]; 
+        resultado_soma = soma_de_duas_matrizes(matriz_um, matriz_dois);
+        print_matriz(resultado_soma);
+        else:
+            print("Não é possivel somar essas matrizes \n");
+        end_else
+    end_if
+
+    if(colunas_um != linhas_dois):
+        print("Não é possível multiplicar essas matrizes \n"); 
+        else :
+            resultado_multiplicacao = multiplicacao_de_duas_matrizes(matriz_um, matriz_dois);
+            print_matriz(resultado_multiplicacao);
+        end_else
+    end_if
+
+
+   
+
+
+end_main
