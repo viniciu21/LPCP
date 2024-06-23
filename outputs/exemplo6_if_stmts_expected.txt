@@ -1,8 +1,0 @@
-Declaração de variável: Id "a" (2,5)(True,[(Id "a" (2,5),IntValue 0 (2,8))],[],[],[])
-Declaração de variável: Id "b" (3,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8))],[],[],[])
-Declaração de variável: Id "c" (4,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8)),(Id "c" (4,5),IntValue 0 (4,8))],[],[],[])
-Tokens pulados antes de elif <|> else:[Id "a" (9,9),Assign (9,11),IntValue 5 (9,13),SemiColon (9,14)]
-Tokens pulados antes de elif seguido:[Id "b" (11,9),Assign (11,11),IntValue 10 (11,13),SemiColon (11,15)]
-Atualização de estado sobre a variável: Id "c" (13,9)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8)),(Id "c" (4,5),IntValue 15 (13,13))],[],[],[])
-Tokens pulados após elif:[Else (14,5),Colon (14,9),Id "a" (15,9),Assign (15,11),IntValue 15 (15,13),SemiColon (15,15),Id "b" (16,9),Assign (16,11),IntValue 15 (16,13),SemiColon (16,15),Id "c" (17,9),Assign (17,11),IntValue 15 (17,13),SemiColon (17,15)]
-Tokens do programa: [Declaration (1,1),Colon (1,12),Id "a" (2,5),Colon (2,6),Type "int" (2,8),SemiColon (2,11),Id "b" (3,5),Colon (3,6),Type "int" (3,8),SemiColon (3,11),Id "c" (4,5),Colon (4,6),Type "int" (4,8),SemiColon (4,11),EndDeclaration (5,1),Main (7,1),Colon (7,5),If (8,5),BoolValue False (8,8),Colon (8,16),Elif (12,5),BoolValue True (12,10),Colon (12,17),Id "c" (13,9),Assign (13,11),IntValue 15 (13,13),SemiColon (13,15),EndIf (18,5),SemiColon (18,11),EndMain (19,1)]

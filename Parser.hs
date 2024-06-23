@@ -89,7 +89,7 @@ varDeclStmt = do
   if isFlagTrue state then do
     updateState (symtableInsert (id, getDefaultValue varType))
     updatedState <- getState
-    liftIO (putStrLn $ "Declaração de variável: " ++ show id ++ show updatedState)
+    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
     liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
@@ -211,31 +211,30 @@ elseStmt =
 whileStmt :: ParsecT [Token] MemoryState IO [Token]
 whileStmt = do
   whileLiteral <- whileToken
-  expressionTokens <- manyTill anyToken (lookAhead colonToken)
+  expressionTokens <- manyTill anyToken (lookAhead colonToken) -- Armazena sintaticamente a condição
   colonLiteral <- colonToken
-  stmtsBlock <- manyTill anyToken (lookAhead endWhileToken)
+  stmtsBlock <- manyTill anyToken (lookAhead endWhileToken) -- Armazena sintaticamente o bloco de stmts
   endWhileLiteral <- endWhileToken
   semiCol <- semiColonToken
+
+  -- Armazena a lista de tokens a serem consumidas após o for
   memoryState <- getState
   input <- getInput
 
   let loop = do
         memoryState <- getState
+        -- Consome e avalia a condição
         setInput expressionTokens
         expressionValue <- ifParenthesisExpression
         let condition = evaluateCondition expressionValue
-        liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ " Valor: " ++ show expressionValue ++ " Condição: " ++ show condition)
         if condition
           then do
-            modifyState setFlagTrue
             setInput stmtsBlock
             _ <- many stmts
             loop
           else setInput input
 
   loop
-
-  modifyState setFlagFalse
 
   return ([whileLiteral] ++ expressionTokens ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
@@ -251,7 +250,7 @@ forStmt = do
   updateAssign <- manyTill anyToken (lookAhead rightParenthesisToken) -- Armazena sintaticamente a atualização de valor da iteração
   rightParenthesis <- rightParenthesisToken
   colon' <- colonToken
-  stmtsBlock <- manyTill anyToken (lookAhead endForToken)
+  stmtsBlock <- manyTill anyToken (lookAhead endForToken) -- Armazena sintaticamente o bloco de stmts
   endFor <- endForToken
   semiCol <- semiColonToken
 
@@ -265,10 +264,8 @@ forStmt = do
         setInput expressionTokens
         expressionValue <- relatOrLogicExpression
         let condition = evaluateCondition expressionValue
-        -- liftIO (putStrLn $ "Expressão:" ++ show expressionTokens ++ " Valor: " ++ show expressionValue ++ " Condição: " ++ show condition)
         if condition
           then do
-            -- modifyState setFlagTrue
             setInput stmtsBlock
             _ <- many stmts
             setInput updateAssign
@@ -277,8 +274,6 @@ forStmt = do
           else setInput input
 
   loop
-
-  -- modifyState setFlagFalse
 
   return ([forLiteral] ++ [colon'] ++ stmtsBlock ++ [endFor] ++ [semiCol])
 
@@ -302,7 +297,7 @@ assign = do
       if isFlagTrue state then do
         updateState (symtableUpdate (id, value))
         newState <- getState
-        liftIO (putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show newState)
+        liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
         return (id : assignSym : [value])
       else
         return (id : assignSym : [value])

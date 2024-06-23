@@ -1,3 +1,0 @@
-Declaração de variável: Id "b" (2,5)(True,[(Id "b" (2,5),IntValue 0 (2,8))],[],[],[])
-Atualização de estado sobre a variável: Id "b" (6,5)(True,[(Id "b" (2,5),IntValue 15 (6,9))],[],[],[])
-Tokens do programa: [Declaration (1,1),Colon (1,12),Id "b" (2,5),Colon (2,6),Type "int" (2,8),SemiColon (2,11),EndDeclaration (3,1),Main (5,1),Colon (5,5),Id "b" (6,5),Assign (6,7),IntValue 15 (6,9),SemiColon (6,15),EndMain (7,1)]
