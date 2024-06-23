@@ -30,6 +30,18 @@ endMainToken = tokenPrim show update_pos get_token -- end_main
     get_token (EndMain position) = Just (EndMain position)
     get_token _ = Nothing
 
+funcToken :: ParsecT [Token] MemoryState IO Token
+funcToken = tokenPrim show update_pos get_token -- end_main
+  where
+    get_token (Func position) = Just (Func position)
+    get_token _ = Nothing
+
+endFuncToken :: ParsecT [Token] MemoryState IO Token
+endFuncToken = tokenPrim show update_pos get_token -- end_main
+  where
+    get_token (EndFunc position) = Just (EndFunc position)
+    get_token _ = Nothing    
+
 ifToken :: ParsecT [Token] MemoryState IO Token
 ifToken = tokenPrim show update_pos get_token -- if
   where

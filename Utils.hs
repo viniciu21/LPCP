@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use :" #-}
+{-# HLINT ignore "Use foldr" #-}
 module Utils where
 import Tokens
 import Text.Parsec
@@ -13,16 +16,18 @@ update_pos pos _ [] = pos
 ----------------------------- Funções de Tipo -----------------------------
 {-
   getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. 
-  Recebe como parâmetros um Token ID, um Token IntValue e um Token Type
+  Recebe como parâmetros um Token IntValue e um Token Type
 -}
-getDefaultValue :: Token -> Token -> TypeValue
-getDefaultValue _ (Type "int" (l, c)) = IntType 0 (l, c)
-getDefaultValue _ (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
-getDefaultValue _ (Type "string" (l, c)) = StringType "" (l, c)
-getDefaultValue _ (Type "float" (l, c)) = FloatType 0.0 (l, c)
-getDefaultValue _ (Type "bool" (l, c)) = BoolType False (l, c)
-getDefaultValue (IntValue val _) (Type "list" (l, c)) = ListType (val, []) (l, c)
-getDefaultValue  _ (Type _ (_, _)) = error "This type doesn't exist"
+getDefaultValue ::  Token -> TypeValue
+getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
+getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
+getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
+getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
+getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
+
+getDefaultValueList :: Token -> Token -> TypeValue
+getDefaultValueList (IntValue val _) (Type "list" (l, c)) = ListType (val, []) (l, c)
 
 fromValuetoTypeValue :: Token -> TypeValue
 fromValuetoTypeValue (IntValue value pos) = IntType value pos
@@ -172,3 +177,7 @@ compatible (StringValue _ _) (StringValue _ _) = True
 compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
+
+parametersDefaultDecl :: [Token] -> [(Token, TypeValue)]
+parametersDefaultDecl [] = []
+parametersDefaultDecl (parameter : parametersTail) = [(Id "default" (0, 0), getDefaultValue parameter )] ++ parametersDefaultDecl parametersTail

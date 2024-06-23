@@ -3,7 +3,7 @@ import Tokens
 
 ----------------------------- Memória de execução -----------------------------
 
-type MemoryState = (Bool, [(Token, TypeValue)], [(Token, [(Token, Token)], [Token])], [[(Token, (Token, Token))]], [[(Token, [(Token, Token)], [Token])]])
+type MemoryState = (Bool, [(Token, TypeValue)], [(Token, [(Token, TypeValue)], [Token])], [[(Token, (Token, Token))]], [[(Token, [(Token, Token)], [Token])]])
 
 ----------------------------- Flag -----------------------------
 {-
@@ -63,3 +63,8 @@ symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack)
   | otherwise =
       let (flag', updatedSymtable, funcs', structs', callstack') = symtableRemove (id1, v1) (flag, listTail, funcs, structs, callstack)
        in (flag', (id2, v2) : updatedSymtable, funcs', structs', callstack')
+
+----------------------------- Tabela de Funções -----------------------------
+
+funcTableInsert :: Token -> [(Token, TypeValue)] -> [Token] -> MemoryState -> MemoryState
+funcTableInsert name parameters stmts (flag, symtable, funcs, structs, callstack) = (flag, symtable, funcs ++ [(name, parameters, stmts)], structs, callstack)

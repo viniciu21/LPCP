@@ -31,10 +31,16 @@ program = do
   modifyState setFlagTrue
   main <- mainToken
   colonM <- colonToken
-  stmts <- stmts
+
+  -- Verifica se existe algum stmt no programa principal
+  endMainAhead <- lookAhead (endMainToken >> return True) <|> return False
+  stmts' <- if endMainAhead
+            then return []
+            else stmts
+
   endMain <- endMainToken
   eof
-  return (declBlock' ++ [main] ++ [colonM] ++ stmts ++ [endMain])
+  return (declBlock' ++ [main] ++ [colonM] ++ stmts' ++ [endMain])
 
 ----------------------------- Declarações -----------------------------
 
@@ -77,6 +83,7 @@ declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
     varDeclStmt
+    <|> funcDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
@@ -87,19 +94,63 @@ varDeclStmt = do
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updateState (symtableInsert (id, getDefaultValue varType))
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
     liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
+funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
+funcDeclStmt = do
+  id <- idToken
+  colon <- colonToken
+  parameters <- parametersBlock
+  to <- toToken
+  returnType <- typeToken
+  semiCol <- semiColonToken
+  liftIO (putStrLn $ "Declaracao de função pré: " ++ show id ++ show parameters ++  show to ++ show returnType)
+  let parameters' = parametersDefaultDecl parameters
+  updateState (funcTableInsert id parameters' [])
+  updatedState <- getState
+  liftIO (putStrLn $ "Declaracao de função: " ++ show id ++ show updatedState)
+  return ([id] ++ [colon] ++ parameters ++ [to] ++ [returnType] ++ [semiCol])
+
+parametersBlock :: ParsecT [Token] MemoryState IO [Token]
+parametersBlock = try
+  nparameter
+  <|> return []
+
+nparameter :: ParsecT [Token] MemoryState IO [Token]
+nparameter = do
+  parameter <- typeToken
+  remainingParameters' <- remainingParameters
+  return (parameter : remainingParameters')
+
+remainingParameters :: ParsecT [Token] MemoryState IO [Token]
+remainingParameters = (
+  do
+    comma <- commaToken
+    parameters <- nparameter
+    return parameters
+  ) <|> return []
+
+
+
+----------------------------- Funções -----------------------------
+funcBlock :: ParsecT [Token] MemoryState IO ([Token])
+funcBlock = do
+  funcLiteral <- funcToken
+  name <- idToken
+
+  return ([funcLiteral])
+
+
 ----------------------------- Code -----------------------------
 
 stmts :: ParsecT [Token] MemoryState IO [Token]
 stmts = do
   first <- stmt
-  -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show first)
   next <- remainingStmts
   return (first ++ next)
 
