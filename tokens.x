@@ -79,6 +79,23 @@ tokens :-
 
 
 {
+data TypeValue = 
+    IntType Int (Int, Int) |
+    FloatType Float (Int, Int) |
+    StringType String (Int, Int) |
+    CharType Char (Int, Int) |
+    BoolType Bool (Int, Int) |
+    ListType (String, Int, [TypeValue]) (Int, Int)
+    deriving (Eq)
+
+instance Show TypeValue where
+    show (IntType val pos) = show val
+    show (FloatType val pos) = show val
+    show (StringType val pos) = val
+    show (CharType val pos) = show val
+    show (BoolType val pos) = show val
+    show (ListType (name, len, val) pos) = show val
+    
 data Token = 
     Id String (Int, Int)                               |
     Colon (Int, Int)                                   |

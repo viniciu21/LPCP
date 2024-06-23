@@ -46,7 +46,6 @@ arithmeticExpressionRemaining termIn =
 -- < | <= | == | > | >= | !=
 relationalExpression :: ParsecT [Token] MemoryState IO Token
 relationalExpression = do
-  -- liftIO $ liftIO (putStrLn $ "entrou aqui3")
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
@@ -129,7 +128,7 @@ idTokenExpression = do
   -- liftIO $ print $ show idToken'
   symtable <- getState
   case symtableGet idToken' symtable of
-    Just val -> return val
+    Just val -> return (fromTypeValuetoValue val)
     Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token

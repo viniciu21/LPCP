@@ -12,21 +12,38 @@ update_pos pos _ [] = pos
 
 ----------------------------- Funções de Tipo -----------------------------
 {-
-  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. Recebe como parâmetro um token referente a um tipo
+  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. 
+  Recebe como parâmetros um Token ID, um Token IntValue e um Token Type
 -}
-getDefaultValue :: Token -> Token
-getDefaultValue (Type "int" (l, c)) = IntValue 0 (l, c)
-getDefaultValue (Type "char" (l, c)) = CharValue '\0' (l, c) -- Using null character as default
-getDefaultValue (Type "string" (l, c)) = StringValue "" (l, c)
-getDefaultValue (Type "float" (l, c)) = FloatValue 0.0 (l, c)
-getDefaultValue (Type "bool" (l, c)) = BoolValue False (l, c)
-getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
+getDefaultValue :: Token -> Token -> Token -> TypeValue
+getDefaultValue _ _ (Type "int" (l, c)) = IntType 0 (l, c)
+getDefaultValue _ _ (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+getDefaultValue _ _ (Type "string" (l, c)) = StringType "" (l, c)
+getDefaultValue _ _ (Type "float" (l, c)) = FloatType 0.0 (l, c)
+getDefaultValue _ _ (Type "bool" (l, c)) = BoolType False (l, c)
+getDefaultValue (Id name _) (IntValue val _) (Type "list" (l, c)) = ListType (name, val, []) (l, c)
+getDefaultValue _  _ (Type _ (_, _)) = error "This type doesn't exist"
+
+fromValuetoTypeValue :: Token -> TypeValue
+fromValuetoTypeValue (IntValue value pos) = IntType value pos
+fromValuetoTypeValue (FloatValue value pos) = FloatType value pos
+fromValuetoTypeValue (CharValue value pos) = CharType value pos
+fromValuetoTypeValue (StringValue value pos) = StringType value pos
+fromValuetoTypeValue (BoolValue value pos) = BoolType value pos
+
+fromTypeValuetoValue :: TypeValue -> Token
+fromTypeValuetoValue (IntType value pos) = IntValue value pos
+fromTypeValuetoValue (FloatType value pos) = FloatValue value pos
+fromTypeValuetoValue (CharType value pos) = CharValue value pos
+fromTypeValuetoValue (StringType value pos) = StringValue value pos
+fromTypeValuetoValue (BoolType value pos) = BoolValue value pos
 
 {-
   Realiza a operação binária requisitada. Recebendo 3 parâmetros:
   param1: Token de "TypeValue"
   param2: Token de Operação
   param3: Token de "TypeValue"
+  Retorna um Token TypeValue
 -}
 binaryEval :: Token -> Token -> Token -> Token
 ---- Aritméticas
@@ -108,7 +125,7 @@ getType :: Token -> MemoryState -> Token
 getType _ (_, [], _, _, _) = error "variable not found"
 getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _) =
   if idStr1 == idStr2
-    then value
+    then fromTypeValuetoValue value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [])
 
 getTypeStr :: Token -> String
