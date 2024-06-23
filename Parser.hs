@@ -66,14 +66,6 @@ decls =
     next <- remainingDecls
     return (first ++ next)
 
--- decls :: ParsecT [Token] MemoryState IO [Token]
--- decls =
---   do
---     first <- declStmt
---     next <- remainingDecls
---     return (first ++ next)
-
-
 remainingDecls :: ParsecT [Token] MemoryState IO [Token]
 remainingDecls =
   ( do
@@ -95,21 +87,25 @@ varDeclStmt = do
   semiCol <- semiColonToken
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
-  if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
-    updatedState <- getState
-    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
-  else
-    liftIO (putStrLn "Flag is false, skipping variable declaration")
-  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+  if isStructFlagTrue state then do
+    return ([id]  ++ [varType])
+  else 
+    if isFlagTrue state then do
+      updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+      updatedState <- getState
+      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+    else do
+      liftIO (putStrLn "Flag is false, skipping variable declaration")
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 -- structDeclStmt :: Parsec [Token] MemoryState IO ([Token])
 -- structDeclStmt = do
 --   typedef <- typedefToken
 --   struct  <- structToken
 --   leftCurlyBrackets <- leftCurlyBracketsToken
---   decls <- 
---   id <- idToken
+--   decls' <- decls
+--   -- id <- idToken
 
 
 
