@@ -1,0 +1,15 @@
+declaration:
+    soma: int, int -> int;
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+func soma(d, e):
+    return d + e;
+end_func
+
+main:
+   a = 2;
+   b = 3;
+end_main

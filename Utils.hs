@@ -178,6 +178,8 @@ compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
 
+--------------------------- Funções ---------------------------
+
 parametersDefaultDecl :: [Token] -> [(Token, TypeValue)]
 parametersDefaultDecl [] = []
 parametersDefaultDecl (parameter : parametersTail) = [(Id "default" (0, 0), getDefaultValue parameter )] ++ parametersDefaultDecl parametersTail

@@ -1,5 +1,7 @@
 module MemoryState where
 import Tokens
+import Debug.Trace (trace)
+
 
 ----------------------------- Memória de execução -----------------------------
 
@@ -66,5 +68,22 @@ symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack)
 
 ----------------------------- Tabela de Funções -----------------------------
 
+{-
+  funcTableInsert recebe um Token ID, uma lista de paramêtros ID TypeValue e uma lista de Stmts e insere na memória
+-}
 funcTableInsert :: Token -> [(Token, TypeValue)] -> [Token] -> MemoryState -> MemoryState
 funcTableInsert name parameters stmts (flag, symtable, funcs, structs, callstack) = (flag, symtable, funcs ++ [(name, parameters, stmts)], structs, callstack)
+
+{-
+  funcTableUpdateParamStmts é uma função utilizada nas implementações das funções para atualizar o nome das variáveis default, e pra popular a lista de stmts vazia da declaração da função.
+-}
+funcTableUpdateParamStmts :: Token -> [Token] -> [Token] -> MemoryState -> MemoryState
+funcTableUpdateParamStmts _ _ _ (_, _, [], _, _) = error "function not found"
+funcTableUpdateParamStmts (Id name pos1) parameters newStmts (flag, symtable, (Id name2 pos2, param2, stmts2) : funcsTail, structs, callstack)
+  | name == name2 = (flag, symtable, ((Id name2 pos2), updateParametersNames parameters param2, newStmts) : funcsTail, structs, callstack)
+  | otherwise =
+      let (flag', symtable', funcsTail', structs', callstack') = funcTableUpdateParamStmts (Id name pos1) parameters newStmts (flag, symtable, funcsTail, structs, callstack)
+       in (flag', symtable', ((Id name2 pos2), param2, stmts2) : funcsTail', structs', callstack')
+
+updateParametersNames :: [Token] -> [(Token, TypeValue)] -> [(Token, TypeValue)]
+updateParametersNames newNames oldParams = zip newNames (map snd oldParams)

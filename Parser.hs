@@ -26,9 +26,11 @@ program :: ParsecT [Token] MemoryState IO [Token]
 program = do
   modifyState setFlagTrue
   declBlock' <- declBlock
+
   modifyState setFlagFalse
-  -- Functions
+  funcBlock' <- funcs
   modifyState setFlagTrue
+
   main <- mainToken
   colonM <- colonToken
 
@@ -105,45 +107,86 @@ funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
 funcDeclStmt = do
   id <- idToken
   colon <- colonToken
-  parameters <- parametersBlock
+  parameters <- parametersTypeBlock
   to <- toToken
   returnType <- typeToken
   semiCol <- semiColonToken
-  liftIO (putStrLn $ "Declaracao de função pré: " ++ show id ++ show parameters ++  show to ++ show returnType)
+
   let parameters' = parametersDefaultDecl parameters
   updateState (funcTableInsert id parameters' [])
   updatedState <- getState
   liftIO (putStrLn $ "Declaracao de função: " ++ show id ++ show updatedState)
+
   return ([id] ++ [colon] ++ parameters ++ [to] ++ [returnType] ++ [semiCol])
 
-parametersBlock :: ParsecT [Token] MemoryState IO [Token]
-parametersBlock = try
-  nparameter
+parametersTypeBlock :: ParsecT [Token] MemoryState IO [Token]
+parametersTypeBlock = try
+  nparameterType
   <|> return []
 
-nparameter :: ParsecT [Token] MemoryState IO [Token]
-nparameter = do
+nparameterType :: ParsecT [Token] MemoryState IO [Token]
+nparameterType = do
   parameter <- typeToken
-  remainingParameters' <- remainingParameters
+  remainingParameters' <- remainingParametersType
   return (parameter : remainingParameters')
 
-remainingParameters :: ParsecT [Token] MemoryState IO [Token]
-remainingParameters = (
+remainingParametersType :: ParsecT [Token] MemoryState IO [Token]
+remainingParametersType = (
   do
     comma <- commaToken
-    parameters <- nparameter
+    parameters <- nparameterType
     return parameters
   ) <|> return []
 
 
 
 ----------------------------- Funções -----------------------------
-funcBlock :: ParsecT [Token] MemoryState IO ([Token])
+funcs :: ParsecT [Token] MemoryState IO [Token] 
+funcs = do
+  func <- funcBlock
+  remainingFuncs' <- remainingFuncs
+  return (func ++ remainingFuncs')
+
+remainingFuncs :: ParsecT [Token] MemoryState IO [Token]
+remainingFuncs = (
+  do
+    funcs
+  ) <|> return []
+
+funcBlock :: ParsecT [Token] MemoryState IO [Token]
 funcBlock = do
   funcLiteral <- funcToken
   name <- idToken
+  leftPar <- leftParenthesisToken
+  parameters <- parametersIdsBlock 
+  rightPar <- rightParenthesisToken
+  colon <- colonToken
+  stmts <- manyTill anyToken (lookAhead endFuncToken)
+  endFor <- endFuncToken
+  updateState(funcTableUpdateParamStmts name parameters stmts)
+  updatedState <- getState
+  liftIO (putStrLn $ "Implementação de função: " ++ show name ++ show updatedState)
 
-  return ([funcLiteral])
+  return [funcLiteral]
+
+parametersIdsBlock :: ParsecT [Token] MemoryState IO [Token]
+parametersIdsBlock = try
+  nparameterId
+  <|> return []
+
+nparameterId :: ParsecT [Token] MemoryState IO [Token]
+nparameterId = do
+  parameter <- idToken
+  remainingParameters' <- remainingParametersId
+  return (parameter : remainingParameters')
+
+remainingParametersId :: ParsecT [Token] MemoryState IO [Token]
+remainingParametersId = (
+  do
+    comma <- commaToken
+    parameters <- nparameterId
+    return parameters
+  ) <|> return []
 
 
 ----------------------------- Code -----------------------------

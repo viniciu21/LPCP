@@ -1,6 +1,7 @@
 # Defina o caminho do executável e a lista de arquivos
 $parserPath = ".\Parser.exe"
 $files = @(
+    ".\exemplos\exemplo1_declarations.txt",
     ".\exemplos\exemplo2_uma_atribuicao.txt",
     ".\exemplos\exemplo3_atribuicao_tipos_simples.txt",
     ".\exemplos\exemplo4_atribuicao_por_expressao.txt",

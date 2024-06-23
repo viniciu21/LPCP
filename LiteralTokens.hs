@@ -90,6 +90,12 @@ endForToken = tokenPrim show update_pos get_token -- if
     get_token (EndFor position) = Just (EndFor position)
     get_token _ = Nothing
 
+returnToken :: ParsecT [Token] MemoryState IO Token
+returnToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (Return position) = Just (Return position)
+    get_token _ = Nothing
+
 ----------------------------- Simbolos -----------------------------
 
 -- :Colon
