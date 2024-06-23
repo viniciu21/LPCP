@@ -1,0 +1,6 @@
+Declaração de variável: Id "a" (2,5)(True,[(Id "a" (2,5),IntValue 0 (2,8))],[],[],[])
+Declaração de variável: Id "b" (3,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8))],[],[],[])
+Declaração de variável: Id "c" (4,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8)),(Id "c" (4,5),IntValue 0 (4,8))],[],[],[])
+Declaração de variável: Id "d" (5,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "b" (3,5),IntValue 0 (3,8)),(Id "c" (4,5),IntValue 0 (4,8)),(Id "d" (5,5),IntValue 0 (5,8))],[],[],[])
+"Error message" (line 1, column 1):
+unexpected end of input

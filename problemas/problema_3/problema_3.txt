@@ -1,4 +1,5 @@
 declaration:
+# Liga a flag, declarações ocorrem
     multiplicacao_de_duas_matrizes : matrix, matrix -> int;
     soma_de_duas_matrizes : matrix, matrix -> int; 
     print_matriz : matrix -> void;
@@ -12,8 +13,9 @@ declaration:
     colunas_dois : int; 
     #pensar na matriz de float
 end_declaration
+# Desliga a flag
 
-
+# Com a flag desligada, armazena a sintaxe das funções no memoryState
 func multiplicacao_de_duas_matrizes(matriz_um[A][B], matriz_dois[C][D]):
     matrix resultado [B][D];
 
@@ -51,6 +53,7 @@ end_func
 
 
 main: 
+# Liga a flag e processa o programa principal
 
     linhas_um = scan("qual o número de linhas da matriz um?");
     colunas_um = scan("qual o número de colunas da matriz um?"); 
@@ -59,11 +62,14 @@ main:
 
     print("Digite aqui os valores da matriz um: ");
 
+    # Desliga a flag, e armazena o bloco de iteração
     for(i = 0; i < linhas_um; i = i + 1 ) : 
+        # Liga a flag para avaliação de expressão e stmts do bloco
         for(j = 0; j < colunas_um; j = j + 1):
             matriz_um[i][j] = scan(); 
         end_for
     end_for
+# Mantêm a flag ligada para processamento do programa principal
 
     linhas_dois = scan("qual o número de linhas da matriz dois?");
     colunas_dois = scan("qual o número de colunas da matriz dois?"); 
@@ -72,12 +78,16 @@ main:
 
     print("Digite aqui os valores da matriz dois: ");
 
+    # Desliga a flag, e armazena o bloco de iteração
     for(i = 0; i <linhas_dois; i = i + 1 ) : 
+        # Liga a flag para avaliação de expressão e stmts do bloco
         for(j = 0; j < colunas_dois; j = j + 1):
             matriz_um[i][j] = scan(); 
         end_for
     end_for
+# Mantêm a flag ligada para processamento do programa principal
 
+    # Devido à implementação diferente do IF, não é necessário mexer com a flag
     if(linhas_um == linhas_dois &&  colunas_um == colunas_dois):
         resultado_soma[linhas_um][colunas_dois]; 
         resultado_soma = soma_de_duas_matrizes(matriz_um, matriz_dois);
@@ -87,6 +97,7 @@ main:
         end_else
     end_if
 
+    # Devido à implementação diferente do IF, não é necessário mexer com a flag
     if(colunas_um != linhas_dois):
         print("Não é possível multiplicar essas matrizes \n"); 
         else :
@@ -94,9 +105,4 @@ main:
             print_matriz(resultado_multiplicacao);
         end_else
     end_if
-
-
-   
-
-
 end_main

@@ -6,6 +6,7 @@ declaration:
     count4: int;
 end_declaration
 
+
 main:
     entry = scan("Informe um valor que deseja verificar");
     while(entry >= 0):
@@ -20,7 +21,6 @@ main:
         end_if;
         entry = scan("Informe um valor que deseja verificar");
     end_while;
-
     print(count1);
     print(count2);
     print(count3);

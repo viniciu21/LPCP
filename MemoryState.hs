@@ -1,4 +1,4 @@
-module MemoryState where 
+module MemoryState where
 import Tokens
 
 ----------------------------- Memória de execução -----------------------------
@@ -16,6 +16,9 @@ setFlagTrue (flag, vars, funcs, structs, callstack) = (True, vars, funcs, struct
 -- Function to set the flag to False
 setFlagFalse :: MemoryState -> MemoryState
 setFlagFalse (flag, vars, funcs, structs, callstack) = (False, vars, funcs, structs, callstack)
+
+isFlagTrue :: MemoryState -> Bool
+isFlagTrue (flag, _, _, _, _) = flag
 
 ----------------------------- Tabela de símbolos -----------------------------
 {-

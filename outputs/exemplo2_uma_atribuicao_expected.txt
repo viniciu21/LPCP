@@ -1,0 +1,6 @@
+Declaração de variável: Id "a" (2,5)(True,[(Id "a" (2,5),IntValue 0 (2,8))],[],[],[])
+Declaração de variável: Id "c" (3,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "c" (3,5),IntValue 0 (3,8))],[],[],[])
+Declaração de variável: Id "b" (8,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "c" (3,5),IntValue 0 (3,8)),(Id "b" (8,5),IntValue 0 (8,8))],[],[],[])
+Declaração de variável: Id "d" (9,5)(True,[(Id "a" (2,5),IntValue 0 (2,8)),(Id "c" (3,5),IntValue 0 (3,8)),(Id "b" (8,5),IntValue 0 (8,8)),(Id "d" (9,5),IntValue 0 (9,8))],[],[],[])
+Atualização de estado sobre a variável: Id "a" (10,5)(True,[(Id "a" (2,5),IntValue 10 (10,9)),(Id "c" (3,5),IntValue 0 (3,8)),(Id "b" (8,5),IntValue 0 (8,8)),(Id "d" (9,5),IntValue 0 (9,8))],[],[],[])
+Tokens do programa: [Declaration (1,1),Colon (1,12),Id "a" (2,5),Colon (2,6),Type "int" (2,8),SemiColon (2,11),Id "c" (3,5),Colon (3,6),Type "int" (3,8),SemiColon (3,11),EndDeclaration (4,1),Main (6,1),Colon (6,5),Id "b" (8,5),Colon (8,6),Type "int" (8,8),SemiColon (8,11),Id "d" (9,5),Colon (9,6),Type "int" (9,8),SemiColon (9,11),Id "a" (10,5),Assign (10,7),IntValue 10 (10,9),SemiColon (10,11),EndMain (11,1)]
