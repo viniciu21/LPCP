@@ -122,11 +122,11 @@ unaryEval notToken (BoolValue x p) = BoolValue (not x) p -- Not (!)
   getType recebe um Token ID (Id String (l, c)) e a lista de símbolos atuais, e retornará o Token TypeValue pertencente à tupla deste ID, para posteriormente realizar uma comparação
 -}
 getType :: Token -> MemoryState -> Token
-getType _ (_, [], _, _, _) = error "variable not found"
-getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _) =
+getType _ (_, [], _, _, _, _) = error "variable not found"
+getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _) =
   if idStr1 == idStr2
     then fromTypeValuetoValue value
-    else getType (Id idStr1 pos1) (False, listTail, [], [], [])
+    else getType (Id idStr1 pos1) (False, listTail, [], [], [], False)
 
 getTypeStr :: Token -> String
 getTypeStr (IntValue _ _) = "int"

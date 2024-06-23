@@ -66,6 +66,14 @@ decls =
     next <- remainingDecls
     return (first ++ next)
 
+-- decls :: ParsecT [Token] MemoryState IO [Token]
+-- decls =
+--   do
+--     first <- declStmt
+--     next <- remainingDecls
+--     return (first ++ next)
+
+
 remainingDecls :: ParsecT [Token] MemoryState IO [Token]
 remainingDecls =
   ( do
@@ -76,7 +84,8 @@ remainingDecls =
 declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
-    varDeclStmt
+    varDeclStmt 
+    -- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
@@ -93,6 +102,16 @@ varDeclStmt = do
   else
     liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
+-- structDeclStmt :: Parsec [Token] MemoryState IO ([Token])
+-- structDeclStmt = do
+--   typedef <- typedefToken
+--   struct  <- structToken
+--   leftCurlyBrackets <- leftCurlyBracketsToken
+--   decls <- 
+--   id <- idToken
+
+
 
 ----------------------------- Code -----------------------------
 
@@ -338,7 +357,7 @@ readValue (Id idStr position) = do
 ----------------------------- Main -----------------------------
 
 parser :: [Token] -> IO (Either ParseError [Token])
-parser tokens = runParserT program (False, [], [], [], []) "Error message" tokens
+parser tokens = runParserT program (False, [], [], [], [], False) "Error message" tokens
 
 main :: IO ()
 main = do

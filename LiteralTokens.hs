@@ -78,6 +78,19 @@ endForToken = tokenPrim show update_pos get_token -- if
     get_token (EndFor position) = Just (EndFor position)
     get_token _ = Nothing
 
+structToken :: ParsecT [Token] MemoryState IO Token
+structToken= tokenPrim show update_pos get_token -- if
+  where
+    get_token (Struct position) = Just (Struct position)
+    get_token _ = Nothing
+
+typedefToken :: ParsecT [Token] MemoryState IO Token
+typedefToken= tokenPrim show update_pos get_token -- if
+  where
+    get_token (Typedef position) = Just (Typedef position)
+    get_token _ = Nothing
+
+
 ----------------------------- Simbolos -----------------------------
 
 -- :Colon
