@@ -87,7 +87,7 @@ varDeclStmt = do
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id id varType)) -- primeiro e segundo argumento de getDefaultValue n são usados
+    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else

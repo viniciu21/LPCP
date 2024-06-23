@@ -15,14 +15,14 @@ update_pos pos _ [] = pos
   getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. 
   Recebe como parâmetros um Token ID, um Token IntValue e um Token Type
 -}
-getDefaultValue :: Token -> Token -> Token -> TypeValue
-getDefaultValue _ _ (Type "int" (l, c)) = IntType 0 (l, c)
-getDefaultValue _ _ (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
-getDefaultValue _ _ (Type "string" (l, c)) = StringType "" (l, c)
-getDefaultValue _ _ (Type "float" (l, c)) = FloatType 0.0 (l, c)
-getDefaultValue _ _ (Type "bool" (l, c)) = BoolType False (l, c)
-getDefaultValue (Id name _) (IntValue val _) (Type "list" (l, c)) = ListType (name, val, []) (l, c)
-getDefaultValue _  _ (Type _ (_, _)) = error "This type doesn't exist"
+getDefaultValue :: Token -> Token -> TypeValue
+getDefaultValue _ (Type "int" (l, c)) = IntType 0 (l, c)
+getDefaultValue _ (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+getDefaultValue _ (Type "string" (l, c)) = StringType "" (l, c)
+getDefaultValue _ (Type "float" (l, c)) = FloatType 0.0 (l, c)
+getDefaultValue _ (Type "bool" (l, c)) = BoolType False (l, c)
+getDefaultValue (IntValue val _) (Type "list" (l, c)) = ListType (val, []) (l, c)
+getDefaultValue  _ (Type _ (_, _)) = error "This type doesn't exist"
 
 fromValuetoTypeValue :: Token -> TypeValue
 fromValuetoTypeValue (IntValue value pos) = IntType value pos

@@ -85,7 +85,7 @@ data TypeValue =
     StringType String (Int, Int) |
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
-    ListType (String, Int, [TypeValue]) (Int, Int)
+    ListType (Int, [TypeValue]) (Int, Int) -- Tamanho, lista de valores, posição
     deriving (Eq)
 
 instance Show TypeValue where
@@ -94,7 +94,7 @@ instance Show TypeValue where
     show (StringType val pos) = val
     show (CharType val pos) = show val
     show (BoolType val pos) = show val
-    show (ListType (name, len, val) pos) = show val
+    show (ListType (len, val) pos) = show val
     
 data Token = 
     Id String (Int, Int)                               |
