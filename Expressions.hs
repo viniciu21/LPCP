@@ -1,9 +1,10 @@
 module Expressions where
 
-import Tokens
-import Text.Parsec
-import MemoryState
+import Control.Monad.IO.Class
 import LiteralTokens
+import MemoryState
+import Text.Parsec
+import Tokens
 import Utils
 
 ----------------------------- Expressões -----------------------------
@@ -28,9 +29,7 @@ arithmeticExpression =
 -- + | -
 plusMinusExpression :: ParsecT [Token] MemoryState IO Token
 plusMinusExpression = do
-  -- liftIO $ liftIO (putStrLn $ "entrou aqui4")
   term' <- term
-  -- liftIO (putStrLn $ "Termo plusMinus: " ++ show term')
   result <- arithmeticExpressionRemaining term'
   return result
 
@@ -191,7 +190,15 @@ exponential =
     valueLiteralExpression
     <|> idTokenExpression
 
--- <|> call
+scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
+scanfExpression idScan = do
+  scanTok <- scanToken
+  lParenthesisLiteral <- leftParenthesisToken
+  scanString <- stringValToken
+  rParenthesisLiteral <- rightParenthesisToken
+  liftIO $ print scanString
+  scanValue <- readValue idScan
+  return scanValue
 
 ----------------------------- Parsec de literais -----------------------------
 

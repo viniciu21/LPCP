@@ -1,15 +1,21 @@
 declaration:
-    soma: int, int -> int;
+    somaousub: int, int -> int;
     a: int;
     b: int;
     c: int;
 end_declaration
 
-func soma(d, e):
-    return d + e;
+func somaousub(d, e):
+    f: int;
+    f = 6;
+    if (d <= e):
+        return d + e;
+    else:
+        return d-e;
 end_func
 
 main:
-   a = 2;
-   b = 3;
+    a = 5;
+    b = 4;
+    somaousub(a, b);
 end_main

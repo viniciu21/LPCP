@@ -87,3 +87,8 @@ funcTableUpdateParamStmts (Id name pos1) parameters newStmts (flag, symtable, (I
 
 updateParametersNames :: [Token] -> [(Token, TypeValue)] -> [(Token, TypeValue)]
 updateParametersNames newNames oldParams = zip newNames (map snd oldParams)
+
+
+----------------------------- Pilha de ativação -----------------------------
+
+-- callStackInsert :: (Token, [(Token, TypeValue)], [Token]) 

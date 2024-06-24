@@ -1,13 +1,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use :" #-}
 {-# HLINT ignore "Use foldr" #-}
 module Utils where
-import Tokens
-import Text.Parsec
-import MemoryState
-import System.IO.Unsafe ( unsafePerformIO )
+
 import Control.Monad (when)
 import Control.Monad.IO.Class
+import MemoryState
+import System.IO.Unsafe (unsafePerformIO)
+import Text.Parsec
+import Tokens
 
 update_pos :: SourcePos -> Token -> [Token] -> SourcePos
 update_pos pos _ (tok : _) = pos -- necessita melhoria
@@ -15,10 +17,10 @@ update_pos pos _ [] = pos
 
 ----------------------------- Funções de Tipo -----------------------------
 {-
-  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. 
+  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela.
   Recebe como parâmetros um Token IntValue e um Token Type
 -}
-getDefaultValue ::  Token -> TypeValue
+getDefaultValue :: Token -> TypeValue
 getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
 getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
 getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
@@ -178,8 +180,90 @@ compatible (CharValue _ _) (CharValue _ _) = True
 compatible (BoolValue _ _) (BoolValue _ _) = True
 compatible _ _ = False
 
+matchTypeValues :: TypeValue -> TypeValue -> Bool
+matchTypeValues (IntType _ _) (IntType _ _) = True
+matchTypeValues (FloatType _ _) (FloatType _ _) = True
+matchTypeValues (StringType _ _) (StringType _ _) = True
+matchTypeValues (CharType _ _) (CharType _ _) = True
+matchTypeValues (BoolType _ _) (BoolType _ _) = True
+matchTypeValues _ _ = False
+
 --------------------------- Funções ---------------------------
 
+{-
+  parametersDefaultDecl é chamado quando ocorre uma declaração de função na seção de declarações. Como os paramêtros ainda não possuem nome e valor, é atribuido nome "default" e defaultValue.
+-}
 parametersDefaultDecl :: [Token] -> [(Token, TypeValue)]
 parametersDefaultDecl [] = []
-parametersDefaultDecl (parameter : parametersTail) = [(Id "default" (0, 0), getDefaultValue parameter )] ++ parametersDefaultDecl parametersTail
+parametersDefaultDecl (parameter : parametersTail) = [(Id "default" (0, 0), getDefaultValue parameter)] ++ parametersDefaultDecl parametersTail
+
+{-
+  checkFunctionParameters é chamada para verificar se uma função com o ID fornecido existe no MemoryState e se o número de parâmetros fornecidos corresponde ao número de parâmetros definidos na função.
+
+  Parâmetros:
+  - funcId: Token que representa o ID da função a ser verificada.
+  - params: Lista de Tokens que representam os parâmetros fornecidos para a função.
+  - memoryState: O estado atual da memória (MemoryState), que inclui informações sobre funções, variáveis, etc.
+
+  Retorno:
+  - Retorna a tupla (Token, [(Token, TypeValue)], [Token]) se a função for encontrada e o número de parâmetros fornecidos corresponder ao número de parâmetros definidos.
+  - Lança um erro "function not found" se a função não for encontrada.
+  - Lança um erro "parameter count mismatch" se o número de parâmetros fornecidos não corresponder ao número de parâmetros definidos.
+-}
+checkFunctionParameters :: Token -> [Token] -> MemoryState -> (Token, [(Token, TypeValue)], [Token])
+checkFunctionParameters funcId params (flag, symTable, funcs, structs, callstack) =
+  case findFunction funcId funcs of
+    Nothing -> error "function not found"
+    Just func@(fid, definedParams, stmts) ->
+      if length params == length definedParams
+        then if allParameterTypesMatch params definedParams
+          then (fid, passParametersValues (map fromValuetoTypeValue params) definedParams, stmts)
+          else error "parameter type mismatch"
+        else error "parameter count mismatch"
+
+allParameterTypesMatch :: [Token] -> [(Token, TypeValue)] -> Bool
+allParameterTypesMatch [] [] = True
+allParameterTypesMatch (param:paramsTail) ((_, expectedType):definedParamsTail) =
+  matchTypeValues (fromValuetoTypeValue param) expectedType && allParameterTypesMatch paramsTail definedParamsTail
+allParameterTypesMatch _ _ = False
+
+passParametersValues :: [TypeValue] -> [(Token, TypeValue)] -> [(Token, TypeValue)]
+passParametersValues newValues oldParams = zip (map fst oldParams) newValues
+
+{-
+  findFunction é uma função auxiliar usada para procurar uma função específica na lista de funções dentro do MemoryState.
+
+  Parâmetros:
+  - funcId: Token que representa o ID da função a ser procurada.
+  - funcs: Lista de tuplas, onde cada tupla contém:
+      - Um Token representando o ID da função.
+      - Uma lista de tuplas (Token, TypeValue) representando os parâmetros da função.
+      - Uma lista de Tokens representando as declarações da função.
+
+  Retorno:
+  - Retorna `Just (fid, params, stmts)` se a função com o ID fornecido for encontrada.
+  - Retorna `Nothing` se a função com o ID fornecido não for encontrada.
+-}
+findFunction :: Token -> [(Token, [(Token, TypeValue)], [Token])] -> Maybe (Token, [(Token, TypeValue)], [Token])
+findFunction _ [] = Nothing
+findFunction funcId@(Id name1 pos1) ((fid@(Id name2 pos2), params, stmts):funcsTail)
+  | name1 == name2 = Just (fid, params, stmts)
+  | otherwise = findFunction funcId funcsTail
+
+------------------------------------------------------
+
+readValue :: Token -> ParsecT [Token] MemoryState IO Token
+readValue (Id idStr position) = do
+  state <- getState
+  let typeStr = getTypeStr (getType (Id idStr position) state)
+  inputTerminal <- liftIO getLine
+  case typeStr of
+    "int" -> return $ IntValue (read inputTerminal) position
+    "float" -> return $ FloatValue (read inputTerminal) position
+    "bool" -> return $ BoolValue (read inputTerminal == "true") position
+    "string" -> return $ StringValue inputTerminal position
+    "char" ->
+      if length inputTerminal == 1
+        then return $ CharValue (head inputTerminal) position
+        else fail "Input for char must be a single character"
+    _ -> error "Unsupported type"

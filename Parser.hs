@@ -7,16 +7,17 @@ module Main (main) where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class
+import Control.Monad.State (modify)
 import Debug.Trace (trace)
+import Expressions
 import LiteralTokens
 import MemoryState
 import System.Environment
-import System.IO.Unsafe ( unsafePerformIO )
+import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec
 import Tokens
 import Utils
-import Expressions
-import Control.Monad.State (modify)
+import Control.Arrow (ArrowChoice(right))
 
 -- import qualified Lexer as requisitada
 
@@ -36,15 +37,16 @@ program = do
 
   -- Verifica se existe algum stmt no programa principal
   endMainAhead <- lookAhead (endMainToken >> return True) <|> return False
-  stmts' <- if endMainAhead
-            then return []
-            else stmts
+  stmts' <-
+    if endMainAhead
+      then return []
+      else stmts
 
   endMain <- endMainToken
   eof
   return (declBlock' ++ [main] ++ [colonM] ++ stmts' ++ [endMain])
 
------------------------------ Declarações -----------------------------
+----------------------------- Bloco de Declarações -----------------------------
 
 declBlock :: ParsecT [Token] MemoryState IO [Token]
 declBlock =
@@ -95,12 +97,13 @@ varDeclStmt = do
   semiCol <- semiColonToken
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
-  if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue varType))
-    updatedState <- getState
-    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
-  else
-    liftIO (putStrLn "Flag is false, skipping variable declaration")
+  if isFlagTrue state
+    then do
+      updateState (symtableInsert (id, getDefaultValue varType))
+      updatedState <- getState
+      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+    else
+      liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -112,6 +115,7 @@ funcDeclStmt = do
   returnType <- typeToken
   semiCol <- semiColonToken
 
+  -- Gera uma lista de parametros default de Tokens ID
   let parameters' = parametersDefaultDecl parameters
   updateState (funcTableInsert id parameters' [])
   updatedState <- getState
@@ -120,9 +124,10 @@ funcDeclStmt = do
   return ([id] ++ [colon] ++ parameters ++ [to] ++ [returnType] ++ [semiCol])
 
 parametersTypeBlock :: ParsecT [Token] MemoryState IO [Token]
-parametersTypeBlock = try
-  nparameterType
-  <|> return []
+parametersTypeBlock =
+  try
+    nparameterType
+    <|> return []
 
 nparameterType :: ParsecT [Token] MemoryState IO [Token]
 nparameterType = do
@@ -131,48 +136,49 @@ nparameterType = do
   return (parameter : remainingParameters')
 
 remainingParametersType :: ParsecT [Token] MemoryState IO [Token]
-remainingParametersType = (
-  do
-    comma <- commaToken
-    parameters <- nparameterType
-    return parameters
-  ) <|> return []
+remainingParametersType =
+  ( do
+      comma <- commaToken
+      parameters <- nparameterType
+      return parameters
+  )
+    <|> return []
 
-
-
------------------------------ Funções -----------------------------
-funcs :: ParsecT [Token] MemoryState IO [Token] 
+----------------------------- Blocos de Funções -----------------------------
+funcs :: ParsecT [Token] MemoryState IO [Token]
 funcs = do
   func <- funcBlock
   remainingFuncs' <- remainingFuncs
   return (func ++ remainingFuncs')
 
 remainingFuncs :: ParsecT [Token] MemoryState IO [Token]
-remainingFuncs = (
-  do
-    funcs
-  ) <|> return []
+remainingFuncs =
+  ( do
+      funcs
+  )
+    <|> return []
 
 funcBlock :: ParsecT [Token] MemoryState IO [Token]
 funcBlock = do
   funcLiteral <- funcToken
   name <- idToken
   leftPar <- leftParenthesisToken
-  parameters <- parametersIdsBlock 
+  parameters <- parametersIdsBlock
   rightPar <- rightParenthesisToken
   colon <- colonToken
   stmts <- manyTill anyToken (lookAhead endFuncToken)
   endFor <- endFuncToken
-  updateState(funcTableUpdateParamStmts name parameters stmts)
+  updateState (funcTableUpdateParamStmts name parameters stmts)
   updatedState <- getState
   liftIO (putStrLn $ "Implementação de função: " ++ show name ++ show updatedState)
 
   return [funcLiteral]
 
 parametersIdsBlock :: ParsecT [Token] MemoryState IO [Token]
-parametersIdsBlock = try
-  nparameterId
-  <|> return []
+parametersIdsBlock =
+  try
+    nparameterId
+    <|> return []
 
 nparameterId :: ParsecT [Token] MemoryState IO [Token]
 nparameterId = do
@@ -181,13 +187,13 @@ nparameterId = do
   return (parameter : remainingParameters')
 
 remainingParametersId :: ParsecT [Token] MemoryState IO [Token]
-remainingParametersId = (
-  do
-    comma <- commaToken
-    parameters <- nparameterId
-    return parameters
-  ) <|> return []
-
+remainingParametersId =
+  ( do
+      comma <- commaToken
+      parameters <- nparameterId
+      return parameters
+  )
+    <|> return []
 
 ----------------------------- Code -----------------------------
 
@@ -211,6 +217,7 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
+    <|> funcStmt
     <|> decls
     <|> printStmt
 
@@ -388,13 +395,14 @@ assign = do
     then fail "type mismatch"
     else do
       -- A atribuição só ocorre quando a flag estiver ativa
-      if isFlagTrue state then do
-        updateState (symtableUpdate (id, fromValuetoTypeValue value))
-        newState <- getState
-        liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
-        return (id : assignSym : [value])
-      else
-        return (id : assignSym : [value])
+      if isFlagTrue state
+        then do
+          updateState (symtableUpdate (id, fromValuetoTypeValue value))
+          newState <- getState
+          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
+          return (id : assignSym : [value])
+        else
+          return (id : assignSym : [value])
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
@@ -403,31 +411,44 @@ assignVal idScan =
     <|> valueLiteralExpression
     <|> scanfExpression idScan
 
-scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
-scanfExpression idScan = do
-  scanTok <- scanToken
-  lParenthesisLiteral <- leftParenthesisToken
-  scanString <- stringValToken
-  rParenthesisLiteral <- rightParenthesisToken
-  liftIO $ print scanString
-  scanValue <- readValue idScan
-  return scanValue
-
-readValue :: Token -> ParsecT [Token] MemoryState IO Token
-readValue (Id idStr position) = do
+-- Chamada de função
+funcStmt :: ParsecT [Token] MemoryState IO [Token]
+funcStmt = do
+  id <- idToken
+  leftpar <- leftParenthesisToken
+  parameters' <- parametersExprBlock
+  rightPar <- rightParenthesisToken
   state <- getState
-  let typeStr = getTypeStr (getType (Id idStr position) state)
-  inputTerminal <- liftIO getLine
-  case typeStr of
-    "int" -> return $ IntValue (read inputTerminal) position
-    "float" -> return $ FloatValue (read inputTerminal) position
-    "bool" -> return $ BoolValue (read inputTerminal == "true") position
-    "string" -> return $ StringValue inputTerminal position
-    "char" ->
-      if length inputTerminal == 1
-        then return $ CharValue (head inputTerminal) position
-        else fail "Input for char must be a single character"
-    _ -> error "Unsupported type"
+  semiCol <- semiColonToken
+
+  liftIO (putStrLn $ "FuncStmt: " ++ show parameters')
+
+  let funcMemory = checkFunctionParameters id parameters' state
+  
+  liftIO (putStrLn $ "funcMemory: " ++ show funcMemory)
+  
+  return [leftpar]
+
+parametersExprBlock :: ParsecT [Token] MemoryState IO [Token]
+parametersExprBlock =
+  try
+    nparameterExpr
+    <|> return []
+
+nparameterExpr :: ParsecT [Token] MemoryState IO [Token]
+nparameterExpr = do
+  parameter <- assignValExpression
+  remainingParameters' <- remainingParametersExpr
+  return (parameter : remainingParameters')
+
+remainingParametersExpr :: ParsecT [Token] MemoryState IO [Token]
+remainingParametersExpr =
+  ( do
+      comma <- commaToken
+      parameters <- nparameterExpr
+      return parameters
+  )
+    <|> return []
 
 ----------------------------- Main -----------------------------
 
