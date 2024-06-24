@@ -69,6 +69,8 @@ tokens :-
     "end_main"                                { \p s -> EndMain (getLC p) } 
     "true"                                    { \p s -> BoolValue True(getLC p) }
     "false"                                   { \p s -> BoolValue False(getLC p) }
+    "typedef"                                 { \p s -> Typedef (getLC p)}
+    "struct"                                  { \p s -> Struct (getLC p)}
     "scan"                                    { \p s -> Scan s (getLC p) }
     "print"                                   { \p s -> Print s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
@@ -85,7 +87,8 @@ data TypeValue =
     StringType String (Int, Int) |
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
-    ListType (Int, [TypeValue]) (Int, Int) -- Tamanho, lista de valores, posição
+    ListType (Int, [TypeValue]) (Int, Int)| -- Tamanho, lista de valores, posição
+    StructType [(String, TypeValue)] (Int, Int) 
     deriving (Eq)
 
 instance Show TypeValue where
@@ -142,10 +145,13 @@ data Token =
     IntValue Int (Int, Int)                            |
     FloatValue Float (Int, Int)                        |
     StringValue String (Int, Int)                      |
-    CharValue Char (Int, Int)                        |
+    CharValue Char (Int, Int)                          |
+    BoolValue Bool (Int, Int)                          |
+    Typedef   (Int, Int)                               |
+    Struct    (Int, Int)                               |
     Scan String (Int, Int)                             |
-    Print String (Int, Int)                            |
-    BoolValue Bool (Int, Int)             
+    Print String (Int, Int)                            
+            
     deriving (Eq,Show)
 
 getLC (AlexPn _ l c) = (l, c)  

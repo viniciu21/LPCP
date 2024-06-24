@@ -29,7 +29,11 @@ program = do
   declBlock' <- declBlock
 
   modifyState setFlagFalse
-  funcBlock' <- funcs
+  funcAhead <- lookAhead (funcToken >> return True) <|> return False
+  funcBlock' <- 
+    if funcAhead 
+      then funcs
+      else return []
   modifyState setFlagTrue
 
   main <- mainToken
@@ -76,6 +80,14 @@ decls =
     next <- remainingDecls
     return (first ++ next)
 
+-- decls :: ParsecT [Token] MemoryState IO [Token]
+-- decls =
+--   do
+--     first <- declStmt
+--     next <- remainingDecls
+--     return (first ++ next)
+
+
 remainingDecls :: ParsecT [Token] MemoryState IO [Token]
 remainingDecls =
   ( do
@@ -88,6 +100,7 @@ declStmt =
   try
     varDeclStmt
     <|> funcDeclStmt
+    -- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
@@ -194,6 +207,15 @@ remainingParametersId =
       return parameters
   )
     <|> return []
+
+-- Struct
+-- structDeclStmt :: Parsec [Token] MemoryState IO ([Token])
+-- structDeclStmt = do
+--   typedef <- typedefToken
+--   struct  <- structToken
+--   leftCurlyBrackets <- leftCurlyBracketsToken
+--   decls <- 
+--   id <- idToken
 
 ----------------------------- Code -----------------------------
 
@@ -453,7 +475,7 @@ remainingParametersExpr =
 ----------------------------- Main -----------------------------
 
 parser :: [Token] -> IO (Either ParseError [Token])
-parser tokens = runParserT program (False, [], [], [], []) "Error message" tokens
+parser tokens = runParserT program (False, [], [], [], [], False, False) "Error message" tokens
 
 main :: IO ()
 main = do
