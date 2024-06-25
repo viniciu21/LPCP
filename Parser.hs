@@ -421,7 +421,7 @@ assign = do
         then do
           updateState (symtableUpdate (id, fromValuetoTypeValue value))
           newState <- getState
-          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
+          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
           return (id : assignSym : [value])
         else
           return (id : assignSym : [value])
@@ -444,7 +444,10 @@ funcStmt = do
   state <- getState
   input <- getInput
 
-  let funcMemoryInstance@(id, funcMemory, funcStmts) = checkFunctionParameters id parameters' state
+  let funcMemoryInstance@(idFunc, funcMemory, funcStmts) = checkFunctionParameters id parameters' state
+
+  liftIO (putStrLn $ "funcStmt: " ++ show funcMemoryInstance)
+
   updateState(callStackPush funcMemoryInstance)
   newState <- getState
   liftIO $ printMemoryState newState
@@ -455,10 +458,11 @@ funcStmt = do
 
   stmts' <- stmts
 
+  liftIO $ printMemoryState newState
+
   modifyState setFuncFlagFalse
 
   setInput input
-
   
   return [leftpar]
 
