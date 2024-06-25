@@ -84,12 +84,32 @@ remainingDecls =
 declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
-    varDeclStmt 
+    varDeclStmt
+    <|> listDeclStmt 
     -- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
   id <- idToken
+  colon <- colonToken
+  varType <- typeToken
+  semiCol <- semiColonToken
+  state <- getState
+  -- A declaração só ocorre quando a flag estiver ativa
+  if isFlagTrue state then do
+    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updatedState <- getState
+    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+  else
+    liftIO (putStrLn "Flag is false, skipping variable declaration")
+  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
+listDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
+listDeclStmt = do
+  id <- idToken
+  leftBrack <- leftBracketToken
+  valList <- intValToken
+  rightBrack <- rightBracketToken
   colon <- colonToken
   varType <- typeToken
   semiCol <- semiColonToken
@@ -136,8 +156,28 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
-    <|> decls
+    <|> listStmt
     <|> printStmt
+
+listStmt :: ParsecT [Token] MemoryState IO ([Token])
+listStmt = do
+  id <- idToken
+  leftBrack <- leftBracketToken
+  valList <- exponential
+  rightBrack <- rightBracketToken
+  colon <- colonToken
+  varType <- typeToken
+  semiCol <- semiColonToken
+  state <- getState
+  
+  -- A declaração só ocorre quando a flag estiver ativa
+  if isFlagTrue state then do
+    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updatedState <- getState
+    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+  else
+    liftIO (putStrLn "Flag is false, skipping variable declaration")
+  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 -- Parser para a instrução print
 printStmt :: ParsecT [Token] MemoryState IO [Token]
