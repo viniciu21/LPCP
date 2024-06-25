@@ -39,7 +39,7 @@ isFlagTrue (flag, _, _, _, _, _, _) = flag
 {-
   symtableGet recebe um Token ID (Id String (l,c)) referente a uma variável, e verifica se ela existe na tabela de símbolos e, caso exista, retorna seu valor.
 -}
-symtableGet :: (Token) -> MemoryState -> Maybe TypeValue
+symtableGet :: Token -> MemoryState -> Maybe TypeValue
 symtableGet _ (_, [], _, _, _, _, _) = fail "variable not found"
 symtableGet (Id idStr1 pos1) (_, (Id idStr2 pos2, value2) : listTail, _, _, _, _, _) =
   if idStr1 == idStr2
@@ -89,10 +89,10 @@ funcTableInsert name parameters stmts (flag, symtable, funcs, structs, callstack
 funcTableUpdateParamStmts :: Token -> [Token] -> [Token] -> MemoryState -> MemoryState
 funcTableUpdateParamStmts _ _ _ (_, _, [], _, _, _, _) = error "function not found"
 funcTableUpdateParamStmts (Id name pos1) parameters newStmts (flag, symtable, (Id name2 pos2, param2, stmts2) : funcsTail, structs, callstack, structflag, funcFlag)
-  | name == name2 = (flag, symtable, ((Id name2 pos2), updateParametersNames parameters param2, newStmts) : funcsTail, structs, callstack, structflag, funcFlag)
+  | name == name2 = (flag, symtable, (Id name2 pos2, updateParametersNames parameters param2, newStmts) : funcsTail, structs, callstack, structflag, funcFlag)
   | otherwise =
       let (flag', symtable', funcsTail', structs', callstack', structflag', funcFlag') = funcTableUpdateParamStmts (Id name pos1) parameters newStmts (flag, symtable, funcsTail, structs, callstack, structflag, funcFlag)
-       in (flag', symtable', ((Id name2 pos2), param2, stmts2) : funcsTail', structs', callstack', structflag', funcFlag')
+       in (flag', symtable', (Id name2 pos2, param2, stmts2) : funcsTail', structs', callstack', structflag', funcFlag')
 
 updateParametersNames :: [Token] -> [(Token, TypeValue)] -> [(Token, TypeValue)]
 updateParametersNames newNames oldParams = zip newNames (map snd oldParams)
@@ -117,7 +117,10 @@ callStackUpdateTop newFunc (flag, symTable, funcs, structs, callStack, structFla
   if null callStack
     then error "call stack is empty"
     else (flag, symTable, funcs, structs, init callStack ++ [newFunc], structFlag, funcFlag)
-
+    
+isCallStackEmpty :: MemoryState -> Bool
+isCallStackEmpty (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
+  null callStack
 {-
   Recebe um Token ID e um Token Type e insere nas variáveis locais da função que está no topo da pilha de ativação.
 -}

@@ -248,7 +248,7 @@ returnStmt = do
   returnLit <- returnToken
   expr <- assignValExpression
   semiCol <- semiColonToken
-  -- liftIO(putStrLn $ "Return: " ++ show returnLit ++ show expr)
+  liftIO(putStrLn $ "Return: " ++ show returnLit ++ show expr)
   updateState setFuncFlagFalse
   updateState setFlagFalse
   return ([returnLit] ++ [expr] ++ [semiCol])
@@ -514,6 +514,9 @@ funcExpr = do
   let funcMemoryInstance@(idFunc, funcMemory, funcStmts) = checkFunctionParameters id parametersValues state
   updateState (callStackPush funcMemoryInstance)
 
+  state' <- getState
+  liftIO (putStrLn $ "State after update for id: " ++ show id)
+  liftIO $ printMemoryState state'
   -- Executa a função
   updateState setFuncFlagTrue
   setInput funcStmts
@@ -524,6 +527,7 @@ funcExpr = do
   setInput input
 
   -- Pega o valor dos parametros formais e atualiza nos parametros reais
+  liftIO (putStrLn $ "Antes de passResultValue")
   newState <- getState
   updateState(passResultValue parameters' (callStackGet newState))
   updatedState <- getState
@@ -533,8 +537,8 @@ funcExpr = do
   -- Remove the function from the call stack
   updateState (const (callStackPop updatedState))
   removedState <- getState
-  -- liftIO (putStrLn $ "State after poping stack: ")
-  -- liftIO $ printMemoryState removedState
+  liftIO (putStrLn $ "State after poping stack: ")
+  liftIO $ printMemoryState removedState
 
   liftIO (putStrLn $ "FuncExpr Stmts': " ++ show stmts')
   liftIO (putStrLn $ "Second-to-last Stmts': " ++ show (stmts' !! (length stmts' - 2)))
@@ -547,7 +551,7 @@ assignValExpression =
   try
     relationalExpression
     <|> try (lookAhead funcExpr *> funcExpr)
-    <|> arithmeticExpression
+    <|> try (lookAhead arithmeticExpression *> arithmeticExpression)
     <|> logicalExpression
     <|> parenthesisExpression
     <|> idTokenExpression
@@ -662,6 +666,7 @@ idTokenExpression = do
   symtable <- getState
   if isFuncFlagTrue symtable
     then do
+      liftIO(putStrLn $ "Estou aqui " ++ show idToken')
       let idVal = getLocalSymtable idToken' symtable 
       return (fromTypeValuetoValue idVal)
   else 

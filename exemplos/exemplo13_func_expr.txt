@@ -1,14 +1,19 @@
 declaration:
     somaousub: int, int -> int;
+    soma: int, int -> int;
     a: int;
     b: int;
     c: int;
 end_declaration
 
+func soma(d, e):
+    return d + e;
+end_func
+
 func somaousub(d, e):
     f: int;
     f = 6;
-    return d + e + f;
+    return soma(d, e) + f; # Não está pegando "+ f"
 end_func
 
 main:
