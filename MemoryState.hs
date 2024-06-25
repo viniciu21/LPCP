@@ -5,12 +5,15 @@ import Debug.Trace (trace)
 
 ----------------------------- Memória de execução -----------------------------
 
-type MemoryState = (Bool, [(Token, TypeValue)], 
-                    [(Token, [(Token, TypeValue)], [Token])], 
-                    [[(Token, TypeValue)]], 
-                    [[(Token, [(Token, Token)], [Token])]],
-                    Bool,
-                    Bool)
+type MemoryState = (
+                    Bool, -- Flag
+                    [(Token, TypeValue)], -- Symtable
+                    [(Token, [(Token, TypeValue)], [Token])], -- Funcs
+                    [[(Token, TypeValue)]], -- Structs
+                    [(Token, [(Token, TypeValue)], [Token])], -- Callstack
+                    Bool, -- StructFlag
+                    Bool -- FuncFlag
+                    )
 
 ----------------------------- Flag -----------------------------
 {-
@@ -97,7 +100,18 @@ updateParametersNames newNames oldParams = zip newNames (map snd oldParams)
 
 ----------------------------- Pilha de ativação -----------------------------
 
--- callStackInsert :: (Token, [(Token, TypeValue)], [Token]) 
+callStackGet :: MemoryState -> (Token, [(Token, TypeValue)], [Token])
+callStackGet (_, _, _, _, [], _, _) = error "call stack is empty"
+callStackGet (_, _, _, _, callstack, _, _) = last callstack
+
+callStackPush :: (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
+callStackPush newCallstackFunc (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = (flag, symtable, funcs, structs, callstack ++ [newCallstackFunc], structflag, funcFlag)
+
+callStackPop :: MemoryState -> MemoryState
+callStackPop (_, _, _, _, [], _, _) = error "call stack is empty"
+callStackPop (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  (flag, symtable, funcs, structs, init callstack, structflag, funcFlag)
+
 
 ----------------------------- Structs -----------------------------
 -- insertStruct :: Token -> [Token] -> MemoryState -> MemoryState
@@ -105,7 +119,7 @@ updateParametersNames newNames oldParams = zip newNames (map snd oldParams)
 
 ----------------------------- StructFlag -----------------------------
 {-
-  Uma variável booliana que será acionada para fazer mudanças semânticas durante a análise sobre blocos de códigos, como subprogramas. Quando estiver falsa, o bloco de código será analisado apenas sintaticamente e, se necessário, guardado na memória.
+  Uma variável booliana que será acionada para fazer o parseramento de declarações de struct, para que seja armazenado as variáveis dentro da struct, e não na memória principal.
 -}
 -- Function to set the flag to True
 setStructFlagTrue :: MemoryState -> MemoryState
@@ -117,3 +131,18 @@ setStructFlagFalse (flag, vars, funcs, structs, callstack, structflag, funcFlag)
 
 isStructFlagTrue :: MemoryState -> Bool
 isStructFlagTrue (_, _, _, _, _, structflag, _) = structflag
+
+----------------------------- StructFlag -----------------------------
+{-
+  Uma variável booliana que será acionada para fazer o parseramento de declarações de struct, para que seja armazenado as variáveis dentro da struct, e não na memória principal.
+-}
+-- Function to set the flag to True
+setFuncFlagTrue :: MemoryState -> MemoryState
+setFuncFlagTrue (flag, vars, funcs, structs, callstack, structflag, funcFlag) = (flag, vars, funcs, structs, callstack, structflag, True)
+
+-- Function to set the flag to False
+setFuncFlagFalse :: MemoryState -> MemoryState
+setFuncFlagFalse (flag, vars, funcs, structs, callstack, structflag, funcFlag) = (flag, vars, funcs, structs, callstack, structflag, False)
+
+isFuncFlagTrue :: MemoryState -> Bool
+isFuncFlagTrue (_, _, _, _, _, _, funcFlag) = funcFlag

@@ -440,14 +440,25 @@ funcStmt = do
   leftpar <- leftParenthesisToken
   parameters' <- parametersExprBlock
   rightPar <- rightParenthesisToken
-  state <- getState
   semiCol <- semiColonToken
+  state <- getState
+  input <- getInput
 
-  liftIO (putStrLn $ "FuncStmt: " ++ show parameters')
+  let funcMemoryInstance@(id, funcMemory, funcStmts) = checkFunctionParameters id parameters' state
+  updateState(callStackPush funcMemoryInstance)
+  newState <- getState
+  liftIO $ printMemoryState newState
 
-  let funcMemory = checkFunctionParameters id parameters' state
-  
-  liftIO (putStrLn $ "funcMemory: " ++ show funcMemory)
+  modifyState setFuncFlagTrue
+
+  setInput funcStmts
+
+  stmts' <- stmts
+
+  modifyState setFuncFlagFalse
+
+  setInput input
+
   
   return [leftpar]
 

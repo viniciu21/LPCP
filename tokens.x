@@ -88,7 +88,7 @@ data TypeValue =
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
     ListType (Int, [TypeValue]) (Int, Int)| -- Tamanho, lista de valores, posição
-    StructType [(String, TypeValue)] (Int, Int) 
+    StructType [(String, TypeValue)] (Int, Int)
     deriving (Eq)
 
 instance Show TypeValue where

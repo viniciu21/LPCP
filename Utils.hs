@@ -267,3 +267,13 @@ readValue (Id idStr position) = do
         then return $ CharValue (head inputTerminal) position
         else fail "Input for char must be a single character"
     _ -> error "Unsupported type"
+
+printMemoryState :: MemoryState -> IO ()
+printMemoryState (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = 
+  liftIO (putStrLn $ "Flag: " ++ show flag ++ 
+  "\nSymtable: "++ show symtable ++ 
+  "\nFuncs: "++ show funcs ++ 
+  "\nStructs: "++ show structs ++ 
+  "\nCallstack: "++ show callstack ++ 
+  "\nStructflag: "++ show structflag ++ 
+  "\nFuncFlag: "++ show funcFlag)
