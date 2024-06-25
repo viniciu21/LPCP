@@ -97,7 +97,7 @@ varDeclStmt = do
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updateState (symtableInsert (id, getDefaultValue varType)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
@@ -106,7 +106,7 @@ varDeclStmt = do
 
 listDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 listDeclStmt = do
-  id <- idToken
+  id@(Id name pos) <- idToken
   leftBrack <- leftBracketToken
   valList <- intValToken
   rightBrack <- rightBracketToken
@@ -114,9 +114,12 @@ listDeclStmt = do
   varType <- typeToken
   semiCol <- semiColonToken
   state <- getState
+
+  let listType = getDefaultValueDataTypes valList (Type "list" pos) varType
+
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updateState (symtableInsert (id, listType)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
@@ -161,7 +164,7 @@ stmt =
 
 listStmt :: ParsecT [Token] MemoryState IO ([Token])
 listStmt = do
-  id <- idToken
+  id@(Id name pos) <- idToken
   leftBrack <- leftBracketToken
   valList <- exponential
   rightBrack <- rightBracketToken
@@ -170,9 +173,11 @@ listStmt = do
   semiCol <- semiColonToken
   state <- getState
   
+  let listType = getDefaultValueDataTypes valList (Type "list" pos) varType
+
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue id varType)) -- primeiro argumento de getDefaultValue não é usado
+    updateState (symtableInsert (id, listType)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
@@ -339,12 +344,12 @@ forStmt = do
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
 assignStmt = do
-  assignTok <- assign
+  assignTok <- assignVar <|> assignList
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
-assign :: ParsecT [Token] MemoryState IO [Token]
-assign = do
+assignVar :: ParsecT [Token] MemoryState IO [Token]
+assignVar = do
   id <- idToken
   assignSym <- assignToken
   value <- assignVal id
@@ -355,6 +360,35 @@ assign = do
       -- A atribuição só ocorre quando a flag estiver ativa
       if isFlagTrue state then do
         updateState (symtableUpdate (id, fromValuetoTypeValue value))
+        newState <- getState
+        liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
+        return (id : assignSym : [value])
+      else
+        return (id : assignSym : [value])
+
+assignList :: ParsecT [Token] MemoryState IO [Token]
+assignList  = do
+  id <- idToken
+  leftBracl <- leftBracketToken
+  valList <- exponential
+  rightBrack <- rightBracketToken
+  assignSym <- assignToken
+  value <- assignVal id
+  state <- getState
+
+  let list = case symtableGet id state of
+        Just val -> return val
+        Nothing -> fail "Variable not found"
+
+  if not (compatible (fromTypeValuetoValue (getElementType list)) value)
+    then fail "type mismatch"
+    else do
+      -- A atribuição só ocorre quando a flag estiver ativa
+      if isFlagTrue state then do
+        -- change especific value in position valList
+        let newlist = list !! 0 = value
+        -- updateState with (id, newList)
+        updateState (symtableUpdate (id, newlist))
         newState <- getState
         liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
         return (id : assignSym : [value])

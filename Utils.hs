@@ -15,14 +15,23 @@ update_pos pos _ [] = pos
   getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela. 
   Recebe como parâmetros um Token ID, um Token IntValue e um Token Type
 -}
-getDefaultValue :: Token -> Token -> TypeValue
-getDefaultValue _ (Type "int" (l, c)) = IntType 0 (l, c)
-getDefaultValue _ (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
-getDefaultValue _ (Type "string" (l, c)) = StringType "" (l, c)
-getDefaultValue _ (Type "float" (l, c)) = FloatType 0.0 (l, c)
-getDefaultValue _ (Type "bool" (l, c)) = BoolType False (l, c)
-getDefaultValue (IntValue val _) (Type "list" (l, c)) = ListType (val, []) (l, c)
-getDefaultValue  _ (Type _ (_, _)) = error "This type doesn't exist"
+getDefaultValue :: Token -> TypeValue
+getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
+getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
+getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
+getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
+getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
+
+getDefaultValueDataTypes :: Token -> Token -> Token -> TypeValue
+getDefaultValueDataTypes (IntValue val _) (Type "list" (l, c)) varType = ListType (val, returnDefaultList val [] varType) (l, c)
+getDefaultValueDataTypes _ _ _ = error "Unexpected type for number of elements"
+
+returnDefaultList :: Int -> [TypeValue] -> Token -> [TypeValue]
+returnDefaultList 0 voidList _ = voidList
+returnDefaultList val voidList varType =
+  let defaultValue = getDefaultValue varType
+  in returnDefaultList (val - 1) (defaultValue : voidList) varType
 
 fromValuetoTypeValue :: Token -> TypeValue
 fromValuetoTypeValue (IntValue value pos) = IntType value pos
@@ -127,6 +136,9 @@ getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _) =
   if idStr1 == idStr2
     then fromTypeValuetoValue value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [], False)
+
+getElementType :: TypeValue -> TypeValue
+getElementType (ListType (n, elements) pos) = head elements
 
 getTypeStr :: Token -> String
 getTypeStr (IntValue _ _) = "int"

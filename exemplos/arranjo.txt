@@ -1,10 +1,14 @@
 declaration: 
     a : int;
-    lista_1 [10] : int;
+    lista_1 [10] : float;
+    lista_2 [10] : string;
+    lista_3 [10] : char;
+    lista_4 [10] : bool;
 end_declaration  
 
 
 main: 
     a = 10;
-    lista_2[a] : int;
+    lista_5[a] : int;
+    lista_1[0] = 5.2;
 end_main

@@ -99,7 +99,7 @@ instance Show TypeValue where
     show (StringType val pos) = val
     show (CharType val pos) = show val
     show (BoolType val pos) = show val
-    show (ListType (len, val) pos) = show val
+    show (ListType (len, val) pos) = show (len, val)
     
 data Token = 
     Id String (Int, Int)                               |
