@@ -203,10 +203,13 @@ parametersDefaultDecl (parameter : parametersTail) =
 
 parametersValuesFromIDs :: [Token] -> MemoryState -> [Token]
 parametersValuesFromIDs [] _ = []
-parametersValuesFromIDs (parameter : parametersTail) symtable =
+parametersValuesFromIDs (parameter@(Id _ _) : parametersTail) symtable =
   case symtableGet parameter symtable of
-        Just val -> fromTypeValuetoValue val : parametersValuesFromIDs parametersTail symtable
-        Nothing -> fail "Variable not found"
+    Just val -> fromTypeValuetoValue val : parametersValuesFromIDs parametersTail symtable
+    Nothing -> error "Variable not found"
+parametersValuesFromIDs (literal : parametersTail) symtable =
+  literal : parametersValuesFromIDs parametersTail symtable
+
 
 {-
   checkFunctionParameters é chamada para verificar se uma função com o ID fornecido existe no MemoryState e se o número de parâmetros fornecidos corresponde ao número de parâmetros definidos na função.
@@ -243,10 +246,14 @@ passParametersValues newValues oldParams = zip (map fst oldParams) newValues
 
 passResultValue :: [Token] -> (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
 passResultValue [] _ state = state
-passResultValue (param:paramsTail) (funcName, (realParamId, realParamVal):realParamsTail, stmts) state =
+passResultValue (param@(Id _ _) : paramsTail) (funcName, (realParamId, realParamVal):realParamsTail, stmts) state =
   let updatedValue = getLocalSymtable realParamId state
       updatedState = symtableUpdate (param, updatedValue) state
   in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
+passResultValue (_ : paramsTail) (funcName, _ : realParamsTail, stmts) state =
+  passResultValue paramsTail (funcName, realParamsTail, stmts) state
+passResultValue _ _ state = state
+
 
 {-
   findFunction é uma função auxiliar usada para procurar uma função específica na lista de funções dentro do MemoryState.

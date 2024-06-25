@@ -8,20 +8,12 @@ end_declaration
 func somaousub(d, e):
     f: int;
     f = 6;
-    g: int;
-    if (d <= e):
-        e = e + 1;
-        print(d + e);
-    else:
-        d = d + 1;
-        print(d - e);
-    end_if;
+    return d + e + f;
 end_func
 
 main:
     a = 5;
-    b = 4;
-    somaousub(a, 3);
+    b = somaousub(a, 3);
     print(a);
     print(b);
 end_main

@@ -10,7 +10,6 @@ import Control.Monad (when)
 import Control.Monad.IO.Class
 import Control.Monad.State (modify)
 import Debug.Trace (trace)
-import Expressions
 import LiteralTokens
 import MemoryState
 import System.Environment
@@ -115,8 +114,8 @@ varDeclStmt = do
         updateState (symtableInsert (id, getDefaultValue varType))
         updatedState <- getState
         liftIO (putStrLn $ "Declaracao de variavel no programa principal: " ++ show id)
-    else
-      liftIO (putStrLn "Flag is false, skipping variable declaration")
+  else
+    liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -223,7 +222,6 @@ remainingParametersId =
 stmts :: ParsecT [Token] MemoryState IO [Token]
 stmts = do
   first <- stmt
-  state <- getState
   next <- remainingStmts
   return (first ++ next)
 
@@ -236,13 +234,24 @@ remainingStmts =
 stmt :: ParsecT [Token] MemoryState IO [Token]
 stmt =
   try
-    assignStmt
+    assignStmt 
+    <|> returnStmt
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
     <|> try (lookAhead funcStmt *> funcStmt)  -- Use lookahead to check for funcStmt
-    <|> decls        -- Use lookahead to check for decls
+    <|> decls
     <|> printStmt
+
+returnStmt :: ParsecT [Token] MemoryState IO [Token]
+returnStmt = do
+  returnLit <- returnToken
+  expr <- assignValExpression
+  semiCol <- semiColonToken
+  -- liftIO(putStrLn $ "Return: " ++ show returnLit ++ show expr)
+  updateState setFuncFlagFalse
+  updateState setFlagFalse
+  return ([returnLit] ++ [expr] ++ [semiCol])
 
 -- Parser para a instrução print
 printStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -426,7 +435,7 @@ assign = do
           then fail "type mismatch"
         else do
           updateState (updateLocalSymtable id (fromValuetoTypeValue value))
-          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
+          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
           newState <- getState
           -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
@@ -439,8 +448,8 @@ assign = do
           liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id)
           -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
-    else
-      return (id : assignSym : [value])
+  else
+    return []
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
@@ -448,13 +457,14 @@ assignVal idScan =
     assignValExpression
     <|> valueLiteralExpression
     <|> scanfExpression idScan
+    -- <|> funcExpr
 
 -- Chamada de função
 funcStmt :: ParsecT [Token] MemoryState IO [Token]
 funcStmt = do
   id <- idToken
   leftpar <- leftParenthesisToken
-  parameters' <- parametersIdsBlock
+  parameters' <- parametersExprBlock
   rightPar <- rightParenthesisToken
   semiCol <- semiColonToken
   state <- getState
@@ -468,16 +478,57 @@ funcStmt = do
   -- Executa a função
   updateState setFuncFlagTrue
   setInput funcStmts
-  newinput <- getInput
   stmts' <- stmts
+  -- liftIO (putStrLn $ "Stmts': " ++ show stmts')
   updateState setFuncFlagFalse
-  
+  updateState setFlagTrue
   setInput input
 
   -- Pega o valor dos parametros formais e atualiza nos parametros reais
   newState <- getState
   updateState(passResultValue parameters' (callStackGet newState))
   updatedState <- getState
+  -- liftIO (putStrLn $ "State after update: ")
+  -- liftIO $ printMemoryState updatedState
+
+  -- Remove the function from the call stack
+  updateState (const (callStackPop updatedState))
+  removedState <- getState
+  -- liftIO (putStrLn $ "State after poping stack: ")
+  -- liftIO $ printMemoryState removedState
+  -- liftIO (putStrLn $ "FuncStmt Stmts': " ++ show stmts')
+  -- liftIO (putStrLn $ "Second-to-last Stmts': " ++ show (stmts' !! (length stmts' - 2)))
+  return stmts'
+
+funcExpr :: ParsecT [Token] MemoryState IO Token
+funcExpr = do
+  id <- idToken
+  leftpar <- leftParenthesisToken
+  parameters' <- parametersExprBlock
+  rightPar <- rightParenthesisToken
+  state <- getState
+  input <- getInput
+
+  -- Verifica se existe função com id, com o mesmo número e tipo de parametros que parameters'
+  let parametersValues = parametersValuesFromIDs parameters' state
+  let funcMemoryInstance@(idFunc, funcMemory, funcStmts) = checkFunctionParameters id parametersValues state
+  updateState (callStackPush funcMemoryInstance)
+
+  -- Executa a função
+  updateState setFuncFlagTrue
+  setInput funcStmts
+  stmts' <- stmts
+  -- liftIO (putStrLn $ "Stmts': " ++ show stmts')
+  updateState setFuncFlagFalse
+  updateState setFlagTrue
+  setInput input
+
+  -- Pega o valor dos parametros formais e atualiza nos parametros reais
+  newState <- getState
+  updateState(passResultValue parameters' (callStackGet newState))
+  updatedState <- getState
+  -- liftIO (putStrLn $ "State after update: ")
+  -- liftIO $ printMemoryState updatedState
 
   -- Remove the function from the call stack
   updateState (const (callStackPop updatedState))
@@ -485,7 +536,209 @@ funcStmt = do
   -- liftIO (putStrLn $ "State after poping stack: ")
   -- liftIO $ printMemoryState removedState
 
-  return [leftpar]
+  liftIO (putStrLn $ "FuncExpr Stmts': " ++ show stmts')
+  liftIO (putStrLn $ "Second-to-last Stmts': " ++ show (stmts' !! (length stmts' - 2)))
+  return (stmts' !! (length stmts' - 2))
+
+----------------------------- Expressões -----------------------------
+
+assignValExpression :: ParsecT [Token] MemoryState IO Token
+assignValExpression =
+  try
+    relationalExpression
+    <|> try (lookAhead funcExpr *> funcExpr)
+    <|> arithmeticExpression
+    <|> logicalExpression
+    <|> parenthesisExpression
+    <|> idTokenExpression
+
+-- <|> call
+
+arithmeticExpression :: ParsecT [Token] MemoryState IO Token
+arithmeticExpression =
+  try
+    plusMinusExpression
+    <|> term
+
+-- + | -
+plusMinusExpression :: ParsecT [Token] MemoryState IO Token
+plusMinusExpression = do
+  term' <- term
+  result <- arithmeticExpressionRemaining term'
+  return result
+
+arithmeticExpressionRemaining :: Token -> ParsecT [Token] MemoryState IO Token
+arithmeticExpressionRemaining termIn =
+  do
+    arithmeticOp <- binaryArithmeticOperatorLiteral
+    term' <- term
+    result <- arithmeticExpressionRemaining (binaryEval termIn arithmeticOp term')
+    return result
+    <|> return termIn
+
+-- < | <= | == | > | >= | !=
+relationalExpression :: ParsecT [Token] MemoryState IO Token
+relationalExpression = do
+  arithmeticExpressionRight <- arithOrParentExpression
+  relationalOp <- binaryRelationalOperatorLiteral
+  arithmeticExpressionLeft <- arithOrParentExpression
+
+  let result = binaryEval arithmeticExpressionRight relationalOp arithmeticExpressionLeft
+  return result
+
+arithOrParentExpression :: ParsecT [Token] MemoryState IO Token
+arithOrParentExpression =
+  try
+    parenthesisExpression
+    <|> arithmeticExpression
+
+logicalExpression :: ParsecT [Token] MemoryState IO Token
+logicalExpression =
+  try
+    binaryLogicalExpression
+    <|> notExpression
+
+-- (<exp>) && (<exp>) | (<exp>) || (<exp>)
+binaryLogicalExpression :: ParsecT [Token] MemoryState IO Token
+binaryLogicalExpression = do
+  firstPar <- leftParenthesisToken
+  relExpLeft <- relationalExpression
+  secondPar <- rightParenthesisToken
+  logicalLiteral <- binaryLogicalOperatorLiteral
+  thirdPar <- leftParenthesisToken
+  relExpRight <- relationalExpression
+  forthPar <- rightParenthesisToken
+  let result = binaryEval relExpLeft logicalLiteral relExpRight
+  return result
+
+-- !(<exp>)
+notExpression :: ParsecT [Token] MemoryState IO Token
+notExpression =
+  try
+    notBoolValExpression
+    <|> notParenthesisExpression
+
+notBoolValExpression :: ParsecT [Token] MemoryState IO Token
+notBoolValExpression =
+  do
+    notTok <- notToken
+    boolValue <- boolValToken
+    let result = unaryEval notTok boolValue
+    return result
+
+notParenthesisExpression :: ParsecT [Token] MemoryState IO Token
+notParenthesisExpression =
+  do
+    notTok <- notToken
+    expression <- parenthesisExpression
+    let result = unaryEval notTok expression
+    return result
+
+relatOrLogicExpression :: ParsecT [Token] MemoryState IO Token
+relatOrLogicExpression =
+  try
+    relationalExpression
+    <|> logicalExpression
+
+parenthesisExpression :: ParsecT [Token] MemoryState IO Token
+parenthesisExpression = do
+  leftPar <- leftParenthesisToken
+  expression <- assignValExpression
+  rightPar <- rightParenthesisToken
+  return expression
+
+ifParenthesisExpression :: ParsecT [Token] MemoryState IO Token
+ifParenthesisExpression = do
+  leftPar <- leftParenthesisToken
+  expression <- relatOrLogicExpression
+  rightPar <- rightParenthesisToken
+  return expression
+
+idTokenExpression :: ParsecT [Token] MemoryState IO Token
+idTokenExpression = do
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui2")
+  idToken' <- idToken
+  -- liftIO $ print $ show idToken'
+  symtable <- getState
+  if isFuncFlagTrue symtable
+    then do
+      let idVal = getLocalSymtable idToken' symtable 
+      return (fromTypeValuetoValue idVal)
+  else 
+    case symtableGet idToken' symtable of
+      Just val -> return (fromTypeValuetoValue val)
+      Nothing -> fail "Variable not found"
+
+valueLiteralExpression :: ParsecT [Token] MemoryState IO Token
+valueLiteralExpression = do
+  valueLiteral
+
+term :: ParsecT [Token] MemoryState IO Token
+term =
+  try
+    termExpression
+    <|> factor
+
+termExpression :: ParsecT [Token] MemoryState IO Token
+termExpression = do
+  -- liftIO $ liftIO (putStrLn $ "entrou aqui5")
+  factor' <- factor
+  result <- termRemaining factor'
+  return result
+
+termRemaining :: Token -> ParsecT [Token] MemoryState IO Token
+termRemaining factorIn =
+  do
+    termOp <- termOperatorLiteral
+    factor' <- factor
+    result <- termRemaining (binaryEval factorIn termOp factor')
+    return result
+    <|> return factorIn
+
+termOperatorLiteral :: ParsecT [Token] MemoryState IO Token
+termOperatorLiteral =
+  do
+    timesToken
+    <|> dividerToken
+    <|> integerDividerToken
+
+factor :: ParsecT [Token] MemoryState IO Token
+factor =
+  try
+    factorExpression
+    <|> exponential
+
+factorExpression :: ParsecT [Token] MemoryState IO Token
+factorExpression = do
+  exponential' <- exponential
+  result <- factorRemaining exponential'
+  return result
+
+factorRemaining :: Token -> ParsecT [Token] MemoryState IO Token
+factorRemaining exponentialIn =
+  do
+    factorOp <- exponentToken
+    exponential' <- exponential
+    result <- factorRemaining (binaryEval exponentialIn factorOp exponential')
+    return result
+    <|> return exponentialIn
+
+exponential :: ParsecT [Token] MemoryState IO Token
+exponential =
+  try
+    valueLiteralExpression
+    <|> try (lookAhead funcExpr *> funcExpr)
+    <|> idTokenExpression
+
+scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
+scanfExpression idScan = do
+  scanTok <- scanToken
+  lParenthesisLiteral <- leftParenthesisToken
+  scanString <- stringValToken
+  rParenthesisLiteral <- rightParenthesisToken
+  liftIO $ print scanString
+  scanValue <- readValue idScan
+  return scanValue
 
 parametersExprBlock :: ParsecT [Token] MemoryState IO [Token]
 parametersExprBlock =
@@ -495,7 +748,7 @@ parametersExprBlock =
 
 nparameterExpr :: ParsecT [Token] MemoryState IO [Token]
 nparameterExpr = do
-  parameter <- assignValExpression
+  parameter <- idToken <|> valueLiteral
   remainingParameters' <- remainingParametersExpr
   return (parameter : remainingParameters')
 
@@ -507,6 +760,41 @@ remainingParametersExpr =
       return parameters
   )
     <|> return []
+
+----------------------------- Parsec de literais -----------------------------
+
+binaryArithmeticOperatorLiteral :: ParsecT [Token] MemoryState IO Token
+binaryArithmeticOperatorLiteral =
+  try
+    plusToken
+    <|> minusToken
+
+binaryRelationalOperatorLiteral :: ParsecT [Token] MemoryState IO Token
+binaryRelationalOperatorLiteral =
+  try
+    lessToken
+    <|> lessEqualToken
+    <|> greaterToken
+    <|> greaterEqualToken
+    <|> equalToken
+    <|> differentToken
+
+binaryLogicalOperatorLiteral :: ParsecT [Token] MemoryState IO Token
+binaryLogicalOperatorLiteral =
+  try
+    andToken
+    <|> orToken
+
+-- <|> xorToken
+
+valueLiteral :: ParsecT [Token] MemoryState IO Token
+valueLiteral =
+  do
+    intValToken
+    <|> floatValToken
+    <|> charValToken
+    <|> stringValToken
+    <|> boolValToken
 
 ----------------------------- Main -----------------------------
 
