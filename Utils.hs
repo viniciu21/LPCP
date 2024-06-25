@@ -16,17 +16,6 @@ update_pos pos _ (tok : _) = pos -- necessita melhoria
 update_pos pos _ [] = pos
 
 ----------------------------- Funções de Tipo -----------------------------
-{-
-  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela.
-  Recebe como parâmetros um Token IntValue e um Token Type
--}
-getDefaultValue :: Token -> TypeValue
-getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
-getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
-getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
-getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
-getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
-getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 
 getDefaultValueList :: Token -> Token -> TypeValue
 getDefaultValueList (IntValue val _) (Type "list" (l, c)) = ListType (val, []) (l, c)
@@ -135,6 +124,20 @@ getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _, _) =
     then fromTypeValuetoValue value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [], False, False)
 
+{-
+  Função para pegar o tipo de uma variável local do escopo da função que esteja no topo da pilha de ativação
+-}
+getLocalType :: Token -> MemoryState -> Token
+getLocalType varId@(Id name1 pos1) memoryState =
+  let (_, locals, _) = callStackGet memoryState
+  in findVarType locals
+  where
+    findVarType :: [(Token, TypeValue)] -> Token
+    findVarType [] = error "variable not found"
+    findVarType ((localVarId@(Id name2 pos2), localVarType):rest)
+      | name2 == name1 = fromTypeValuetoValue localVarType
+      | otherwise = findVarType rest
+
 getTypeStr :: Token -> String
 getTypeStr (IntValue _ _) = "int"
 getTypeStr (FloatValue _ _) = "float"
@@ -195,7 +198,15 @@ matchTypeValues _ _ = False
 -}
 parametersDefaultDecl :: [Token] -> [(Token, TypeValue)]
 parametersDefaultDecl [] = []
-parametersDefaultDecl (parameter : parametersTail) = [(Id "default" (0, 0), getDefaultValue parameter)] ++ parametersDefaultDecl parametersTail
+parametersDefaultDecl (parameter : parametersTail) =
+  [(Id "default" (0, 0), getDefaultValue parameter)] ++ parametersDefaultDecl parametersTail
+
+parametersValuesFromIDs :: [Token] -> MemoryState -> [Token]
+parametersValuesFromIDs [] _ = []
+parametersValuesFromIDs (parameter : parametersTail) symtable =
+  case symtableGet parameter symtable of
+        Just val -> fromTypeValuetoValue val : parametersValuesFromIDs parametersTail symtable
+        Nothing -> fail "Variable not found"
 
 {-
   checkFunctionParameters é chamada para verificar se uma função com o ID fornecido existe no MemoryState e se o número de parâmetros fornecidos corresponde ao número de parâmetros definidos na função.
@@ -229,6 +240,13 @@ allParameterTypesMatch _ _ = False
 
 passParametersValues :: [TypeValue] -> [(Token, TypeValue)] -> [(Token, TypeValue)]
 passParametersValues newValues oldParams = zip (map fst oldParams) newValues
+
+passResultValue :: [Token] -> (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
+passResultValue [] _ state = state
+passResultValue (param:paramsTail) (funcName, (realParamId, realParamVal):realParamsTail, stmts) state =
+  let updatedValue = getLocalSymtable realParamId state
+      updatedState = symtableUpdate (param, updatedValue) state
+  in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
 
 {-
   findFunction é uma função auxiliar usada para procurar uma função específica na lista de funções dentro do MemoryState.
@@ -269,11 +287,11 @@ readValue (Id idStr position) = do
     _ -> error "Unsupported type"
 
 printMemoryState :: MemoryState -> IO ()
-printMemoryState (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = 
-  liftIO (putStrLn $ "Flag: " ++ show flag ++ 
-  "\nSymtable: "++ show symtable ++ 
-  "\nFuncs: "++ show funcs ++ 
-  "\nStructs: "++ show structs ++ 
-  "\nCallstack: "++ show callstack ++ 
-  "\nStructflag: "++ show structflag ++ 
+printMemoryState (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  liftIO (putStrLn $ "Flag: " ++ show flag ++
+  "\nSymtable: "++ show symtable ++
+  "\nFuncs: "++ show funcs ++
+  "\nStructs: "++ show structs ++
+  "\nCallstack: "++ show callstack ++
+  "\nStructflag: "++ show structflag ++
   "\nFuncFlag: "++ show funcFlag)

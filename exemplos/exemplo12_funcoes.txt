@@ -9,13 +9,18 @@ func somaousub(d, e):
     f: int;
     f = 6;
     if (d <= e):
-        return d + e;
+        e = e + 1;
+        print(d + e);
     else:
-        return d-e;
+        d = d + 1;
+        print(d - e);
+    end_if;
 end_func
 
 main:
     a = 5;
     b = 4;
     somaousub(a, b);
+    print(a);
+    print(b);
 end_main

@@ -112,6 +112,54 @@ callStackPop (_, _, _, _, [], _, _) = error "call stack is empty"
 callStackPop (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
   (flag, symtable, funcs, structs, init callstack, structflag, funcFlag)
 
+callStackUpdateTop :: (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
+callStackUpdateTop newFunc (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
+  if null callStack
+    then error "call stack is empty"
+    else (flag, symTable, funcs, structs, init callStack ++ [newFunc], structFlag, funcFlag)
+
+{-
+  Recebe um Token ID e um Token Type e insere nas variáveis locais da função que está no topo da pilha de ativação.
+-}
+insertLocalSymtable :: Token -> Token -> MemoryState -> MemoryState
+insertLocalSymtable newId newVarType memoryState =
+  let (funcId, locals, stmts) = callStackGet memoryState
+      newVar = (newId, getDefaultValue newVarType)
+      updatedLocals = locals ++ [newVar]
+      updatedFunc = (funcId, updatedLocals, stmts)
+  in callStackUpdateTop updatedFunc memoryState
+
+{-
+  Recebe um Token ID e um TypeValue que serão atualizados no escopo local da função do topo da pilha de ativação.
+-}
+updateLocalSymtable :: Token -> TypeValue -> MemoryState -> MemoryState
+updateLocalSymtable varId@(Id name1 pos1) newValue memoryState =
+  let (funcId, locals, stmts) = callStackGet memoryState
+      updatedLocals = updateVar locals
+      updatedFunc = (funcId, updatedLocals, stmts)
+  in callStackUpdateTop updatedFunc memoryState
+  where
+    updateVar :: [(Token, TypeValue)] -> [(Token, TypeValue)]
+    updateVar [] = error "Variable not found"
+    updateVar ((oldVarId@(Id name2 pos2), oldValue):rest)
+      | name2 == name1 = (oldVarId, newValue) : rest
+      | otherwise = (oldVarId, oldValue) : updateVar rest
+
+{-
+  Recebe um Token ID e verifica se ele existe no escopo local da função do topo da pilha de ativação. Se existir, retorna o seu TypeValue
+-}
+getLocalSymtable :: Token -> MemoryState -> TypeValue
+getLocalSymtable varId@(Id name1 _) memoryState =
+  let (_, locals, _) = callStackGet memoryState
+  in findVarType locals
+  where
+    findVarType :: [(Token, TypeValue)] -> TypeValue
+    findVarType [] = error "variable not found"
+    findVarType ((localVarId@(Id name2 _), localVarType):rest)
+      | name1 == name2 = localVarType
+      | otherwise = findVarType rest
+
+
 
 ----------------------------- Structs -----------------------------
 -- insertStruct :: Token -> [Token] -> MemoryState -> MemoryState
@@ -146,3 +194,17 @@ setFuncFlagFalse (flag, vars, funcs, structs, callstack, structflag, funcFlag) =
 
 isFuncFlagTrue :: MemoryState -> Bool
 isFuncFlagTrue (_, _, _, _, _, _, funcFlag) = funcFlag
+
+
+----------------------------- Utils -----------------------------
+{-
+  getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela.
+  Recebe como parâmetros um Token IntValue e um Token Type
+-}
+getDefaultValue :: Token -> TypeValue
+getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
+getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
+getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
+getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
+getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"

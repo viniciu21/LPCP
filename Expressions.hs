@@ -126,9 +126,14 @@ idTokenExpression = do
   idToken' <- idToken
   -- liftIO $ print $ show idToken'
   symtable <- getState
-  case symtableGet idToken' symtable of
-    Just val -> return (fromTypeValuetoValue val)
-    Nothing -> fail "Variable not found"
+  if isFuncFlagTrue symtable
+    then do
+      let idVal = getLocalSymtable idToken' symtable 
+      return (fromTypeValuetoValue idVal)
+  else 
+    case symtableGet idToken' symtable of
+      Just val -> return (fromTypeValuetoValue val)
+      Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token
 valueLiteralExpression = do

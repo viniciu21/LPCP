@@ -5,6 +5,7 @@
 
 module Main (main) where
 
+import Control.Arrow (ArrowChoice (right))
 import Control.Monad (when)
 import Control.Monad.IO.Class
 import Control.Monad.State (modify)
@@ -17,7 +18,6 @@ import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec
 import Tokens
 import Utils
-import Control.Arrow (ArrowChoice(right))
 
 -- import qualified Lexer as requisitada
 
@@ -25,16 +25,16 @@ import Control.Arrow (ArrowChoice(right))
 
 program :: ParsecT [Token] MemoryState IO [Token]
 program = do
-  modifyState setFlagTrue
+  updateState setFlagTrue
   declBlock' <- declBlock
 
-  modifyState setFlagFalse
+  updateState setFlagFalse
   funcAhead <- lookAhead (funcToken >> return True) <|> return False
-  funcBlock' <- 
-    if funcAhead 
+  funcBlock' <-
+    if funcAhead
       then funcs
       else return []
-  modifyState setFlagTrue
+  updateState setFlagTrue
 
   main <- mainToken
   colonM <- colonToken
@@ -80,19 +80,10 @@ decls =
     next <- remainingDecls
     return (first ++ next)
 
--- decls :: ParsecT [Token] MemoryState IO [Token]
--- decls =
---   do
---     first <- declStmt
---     next <- remainingDecls
---     return (first ++ next)
-
-
 remainingDecls :: ParsecT [Token] MemoryState IO [Token]
 remainingDecls =
-  ( do
-      decls
-  )
+  try
+    decls
     <|> return []
 
 declStmt :: ParsecT [Token] MemoryState IO ([Token])
@@ -100,11 +91,13 @@ declStmt =
   try
     varDeclStmt
     <|> funcDeclStmt
-    -- typeDeclStmt
+
+-- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
   id <- idToken
+  -- liftIO (putStrLn $ "varDeclStmt: " ++ show id)
   colon <- colonToken
   varType <- typeToken
   semiCol <- semiColonToken
@@ -112,9 +105,16 @@ varDeclStmt = do
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state
     then do
-      updateState (symtableInsert (id, getDefaultValue varType))
-      updatedState <- getState
-      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+      if isFuncFlagTrue state
+        then do
+        updateState (insertLocalSymtable id varType)
+        updatedState <- getState
+        liftIO (putStrLn $ "Declaracao de variavel em função local: " ++ show id)
+        -- liftIO $ printMemoryState updatedState
+      else do
+        updateState (symtableInsert (id, getDefaultValue varType))
+        updatedState <- getState
+        liftIO (putStrLn $ "Declaracao de variavel no programa principal: " ++ show id)
     else
       liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
@@ -183,7 +183,8 @@ funcBlock = do
   endFor <- endFuncToken
   updateState (funcTableUpdateParamStmts name parameters stmts)
   updatedState <- getState
-  liftIO (putStrLn $ "Implementação de função: " ++ show name ++ show updatedState)
+  liftIO (putStrLn $ "Implementação de função salvo na memória: " ++ show name)
+  -- liftIO $ printMemoryState updatedState
 
   return [funcLiteral]
 
@@ -214,7 +215,7 @@ remainingParametersId =
 --   typedef <- typedefToken
 --   struct  <- structToken
 --   leftCurlyBrackets <- leftCurlyBracketsToken
---   decls <- 
+--   decls <-
 --   id <- idToken
 
 ----------------------------- Code -----------------------------
@@ -222,14 +223,14 @@ remainingParametersId =
 stmts :: ParsecT [Token] MemoryState IO [Token]
 stmts = do
   first <- stmt
+  state <- getState
   next <- remainingStmts
   return (first ++ next)
 
 remainingStmts :: ParsecT [Token] MemoryState IO [Token]
 remainingStmts =
-  ( do
-      stmts
-  )
+  try
+    stmts
     <|> return []
 
 stmt :: ParsecT [Token] MemoryState IO [Token]
@@ -239,8 +240,8 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
-    <|> funcStmt
-    <|> decls
+    <|> try (lookAhead funcStmt *> funcStmt)  -- Use lookahead to check for funcStmt
+    <|> decls        -- Use lookahead to check for decls
     <|> printStmt
 
 -- Parser para a instrução print
@@ -277,25 +278,25 @@ ifStmt = do
     then do
       stmtsBlock <- stmts
       skip' <- manyTill anyToken (lookAhead endifToken)
-      liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
+      -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
       endIfLiteral <- endifToken
       semiCol1 <- semiColonToken
       return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol1])
     else do
-      skip' <- manyTill anyToken (lookAhead elifToken <|> elseToken)
-      liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
+      skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
+      -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
       elifStmt' <- elifStmt
       if null elifStmt'
         then do
           skip' <- manyTill anyToken (lookAhead elseToken)
-          liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
+          -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
           elseStmt' <- elseStmt
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
         else do
           skip' <- manyTill anyToken (lookAhead endifToken)
-          liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
+          -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
           endIfLiteral <- endifToken
           semiCol <- semiColonToken
           return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt' ++ [endIfLiteral] ++ [semiCol])
@@ -314,7 +315,7 @@ elifStmt =
           return ([elifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
         else do
           skip' <- manyTill anyToken (lookAhead elifToken)
-          liftIO (putStrLn $ "Tokens pulados antes de elif seguido:" ++ show skip')
+          -- liftIO (putStrLn $ "Tokens pulados antes de elif seguido:" ++ show skip')
           elifStmt' <- elifStmt
           return elifStmt'
   )
@@ -389,6 +390,7 @@ forStmt = do
         let condition = evaluateCondition expressionValue
         if condition
           then do
+            -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
             setInput stmtsBlock
             _ <- many stmts
             setInput updateAssign
@@ -413,18 +415,32 @@ assign = do
   assignSym <- assignToken
   value <- assignVal id
   state <- getState
-  if not (compatible (getType id state) value)
-    then fail "type mismatch"
-    else do
-      -- A atribuição só ocorre quando a flag estiver ativa
-      if isFlagTrue state
-        then do
+
+  -- A atribuição só ocorre quando a flag estiver ativa
+  if isFlagTrue state
+    then do
+    -- Atribuição para escopo local da função no topo da pilha
+    if isFuncFlagTrue state
+      then do
+        if not (compatible (getLocalType id state) value)
+          then fail "type mismatch"
+        else do
+          updateState (updateLocalSymtable id (fromValuetoTypeValue value))
+          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
+          newState <- getState
+          -- liftIO $ printMemoryState newState
+          return (id : assignSym : [value])
+      else do
+        if not (compatible (getType id state) value)
+          then fail "type mismatch"
+        else do
           updateState (symtableUpdate (id, fromValuetoTypeValue value))
           newState <- getState
-          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
+          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id)
+          -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
-        else
-          return (id : assignSym : [value])
+    else
+      return (id : assignSym : [value])
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
@@ -438,32 +454,37 @@ funcStmt :: ParsecT [Token] MemoryState IO [Token]
 funcStmt = do
   id <- idToken
   leftpar <- leftParenthesisToken
-  parameters' <- parametersExprBlock
+  parameters' <- parametersIdsBlock
   rightPar <- rightParenthesisToken
   semiCol <- semiColonToken
   state <- getState
   input <- getInput
 
-  let funcMemoryInstance@(idFunc, funcMemory, funcStmts) = checkFunctionParameters id parameters' state
+  -- Verifica se existe função com id, com o mesmo número e tipo de parametros que parameters'
+  let parametersValues = parametersValuesFromIDs parameters' state
+  let funcMemoryInstance@(idFunc, funcMemory, funcStmts) = checkFunctionParameters id parametersValues state
+  updateState (callStackPush funcMemoryInstance)
 
-  liftIO (putStrLn $ "funcStmt: " ++ show funcMemoryInstance)
-
-  updateState(callStackPush funcMemoryInstance)
-  newState <- getState
-  liftIO $ printMemoryState newState
-
-  modifyState setFuncFlagTrue
-
+  -- Executa a função
+  updateState setFuncFlagTrue
   setInput funcStmts
-
+  newinput <- getInput
   stmts' <- stmts
-
-  liftIO $ printMemoryState newState
-
-  modifyState setFuncFlagFalse
-
-  setInput input
+  updateState setFuncFlagFalse
   
+  setInput input
+
+  -- Pega o valor dos parametros formais e atualiza nos parametros reais
+  newState <- getState
+  updateState(passResultValue parameters' (callStackGet newState))
+  updatedState <- getState
+
+  -- Remove the function from the call stack
+  updateState (const (callStackPop updatedState))
+  removedState <- getState
+  -- liftIO (putStrLn $ "State after poping stack: ")
+  -- liftIO $ printMemoryState removedState
+
   return [leftpar]
 
 parametersExprBlock :: ParsecT [Token] MemoryState IO [Token]
