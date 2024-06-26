@@ -14,8 +14,11 @@ $files = @(
     ".\exemplos\exemplo10_problema_2.txt",
     ".\exemplos\exemplo11_print.txt",
     ".\exemplos\exemplo12_funcoes.txt",
-    ".\exemplos\exemplo13_func_expr.txt"
-    ".\exemplos\exemplo14_fibonnaci.txt"
+    ".\exemplos\exemplo13_func_expr.txt",
+    ".\exemplos\exemplo14_fibonnaci.txt",
+    ".\exemplos\exemplo15_nested_for.txt",
+    ".\exemplos\exemplo16_nested_while.txt",
+    ".\exemplos\exemplo17_nested_if.txt"
 )
 
 # Itere sobre cada arquivo e execute o parser.exe com o arquivo atual
