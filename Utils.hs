@@ -137,8 +137,8 @@ getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _) =
     then fromTypeValuetoValue value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [], False)
 
-getElementType :: TypeValue -> TypeValue
-getElementType (ListType (n, elements) pos) = head elements
+getElementType :: [TypeValue] -> TypeValue
+getElementType (x:_) = x
 
 getTypeStr :: Token -> String
 getTypeStr (IntValue _ _) = "int"

@@ -330,6 +330,7 @@ forStmt = do
         let condition = evaluateCondition expressionValue
         if condition
           then do
+            -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
             setInput stmtsBlock
             _ <- many stmts
             setInput updateAssign
@@ -344,7 +345,8 @@ forStmt = do
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
 assignStmt = do
-  assignTok <- assignVar <|> assignList
+  assignTok <- assignVar 
+              <|> assignList
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
@@ -370,30 +372,50 @@ assignList :: ParsecT [Token] MemoryState IO [Token]
 assignList  = do
   id <- idToken
   leftBracl <- leftBracketToken
-  valList <- exponential
+  valList@(Id acval pos) <- exponential
   rightBrack <- rightBracketToken
   assignSym <- assignToken
   value <- assignVal id
   state <- getState
 
-  let list = case symtableGet id state of
-        Just val -> return val
-        Nothing -> fail "Variable not found"
-
-  if not (compatible (fromTypeValuetoValue (getElementType list)) value)
-    then fail "type mismatch"
-    else do
-      -- A atribuição só ocorre quando a flag estiver ativa
-      if isFlagTrue state then do
-        -- change especific value in position valList
-        let newlist = list !! 0 = value
-        -- updateState with (id, newList)
-        updateState (symtableUpdate (id, newlist))
-        newState <- getState
-        liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
-        return (id : assignSym : [value])
+  case symtableGet id state of
+    Just (ListType (size, elements) pos) -> do
+      -- Modificar a lista na posição desejada
+      let intVal = read acval :: Int
+      let updatedElements = take intVal elements ++ [fromValuetoTypeValue value] ++ drop (intVal + 1) elements
+      let minhalista = ListType (size, updatedElements) pos
+      updateState (symtableUpdate (id, minhalista))
+      -- Atualizar o estado com a lista modificada
+      newState <- getState
+      -- Verificar se a flag está ativa para fazer a atribuição
+      if isFlagTrue newState then do
+        liftIO $ putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show newState
+        return [id, assignSym, value]
       else
-        return (id : assignSym : [value])
+        return [id, assignSym, value]
+      
+    _ -> fail "Variável não encontrada na tabela de símbolos"
+
+
+  --let list = case symtableGet id state of
+  --      Just val -> return val
+  --      Nothing -> fail "Variable not found"
+
+  --if not (compatible (fromTypeValuetoValue (getElementType list)) value)
+  --  then fail "type mismatch"
+  --  else do
+  --    -- A atribuição só ocorre quando a flag estiver ativa
+  --    if isFlagTrue state then do
+  --      -- change especific value in position valList
+  --      let newlist = 
+  --      -- updateState with (id, newList)
+  --      updateState (symtableUpdate (id, newlist))
+  --      newState <- getState
+  --      liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
+  --      return (id : assignSym : [value])
+  --    else
+  --      return (id : assignSym : [value])
+
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
