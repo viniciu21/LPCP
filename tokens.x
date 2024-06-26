@@ -29,6 +29,7 @@ tokens :-
     "*"                                       { \p s -> Times (getLC p) } 
     "/"                                       { \p s -> Divider (getLC p) } 
     "//"                                      { \p s -> IntegerDivider (getLC p) } 
+    "%"                                      { \p s -> Mod (getLC p) }
     "**"                                      { \p s -> Exponent (getLC p) } 
     "&&"                                      { \p s -> And (getLC p) } 
     "||"                                      { \p s -> Or (getLC p) } 
@@ -39,7 +40,8 @@ tokens :-
     ">"                                       { \p s -> Greater (getLC p) }
     ">="                                       { \p s -> GreaterEqual (getLC p) } 
     "=="                                      { \p s -> Equal (getLC p) } 
-    "!="                                      { \p s -> Different (getLC p) } 
+    "!="                                      { \p s -> Different (getLC p) }
+    "void"                                    { \p s -> Type s (getLC p) } 
     "int"                                     { \p s -> Type s (getLC p) } 
     "float"                                   { \p s -> Type s (getLC p) } 
     "char"                                    { \p s -> Type s (getLC p) } 
@@ -75,7 +77,7 @@ tokens :-
     "print"                                   { \p s -> Print s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
     $digit+                                   { \p s -> IntValue (read s) (getLC p) }
-    \" [$white $alpha $digit ! \_ \']* \"     { \p s -> StringValue (cleanString s) (getLC p) }
+    \" [$white $alpha $digit ! : \_ \']* \"     { \p s -> StringValue (cleanString s) (getLC p) }
     \' $printable \'                          { \p s -> CharValue (cleanChar s) (getLC p) } 
     $alpha [$alpha $digit \_ \']*             { \p s -> Id s (getLC p) }
 
@@ -88,7 +90,7 @@ data TypeValue =
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
     ListType (Int, [TypeValue]) (Int, Int)| -- Tamanho, lista de valores, posição
-    StructType [(String, TypeValue)] (Int, Int) 
+    StructType [(String, TypeValue)] (Int, Int)
     deriving (Eq)
 
 instance Show TypeValue where
@@ -115,6 +117,7 @@ data Token =
     Times (Int, Int)                                   |
     Divider (Int, Int)                                 |
     IntegerDivider (Int, Int)                          |
+    Mod (Int, Int)                                     |
     Exponent (Int, Int)                                |
     And (Int, Int)                                     |
     Or (Int, Int)                                      |

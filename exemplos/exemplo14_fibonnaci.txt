@@ -1,0 +1,21 @@
+declaration:
+    fibonacci: int -> int;
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+func fibonacci(n):
+    if ((n == 0) || (n == 1)):
+        return n;
+    else:
+        return fibonacci(n-1) + fibonacci(n - 2);
+    end_if;
+end_func
+
+main:
+    a = scan("Insira um numero: ");
+    b = fibonacci(a);
+    print(a);
+    print(b);
+end_main

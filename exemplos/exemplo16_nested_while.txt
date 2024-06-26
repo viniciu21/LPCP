@@ -1,0 +1,19 @@
+declaration:
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+main:
+    a = 5;
+    b = 6;
+    while(a < 10):
+        while (b > 0):
+            b = b - 1;
+            print(b);
+        end_while;
+        a = a + 1;
+        print(a);
+        b = 6;
+    end_while;
+end_main

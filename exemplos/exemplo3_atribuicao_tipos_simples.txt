@@ -12,4 +12,9 @@ main:
     c = 'o';
     d = 10.102;
     e = false;
+    print(a);
+    print(b);
+    print(c);
+    print(d);
+    print(e);
 end_main

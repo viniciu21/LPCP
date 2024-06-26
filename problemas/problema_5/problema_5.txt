@@ -1,0 +1,33 @@
+declaration:
+    mdc: int, int, int -> int;
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+func mdc(n, m, r):
+    aux: int;
+    if((n <= 0) || (m <= 0)):
+        return r;
+    end_if;
+    if(m%n == 0):
+        r = n;
+        return r;
+    elif(n%m == 0):
+        r = m;
+        return r;
+    elif(m > n):
+        mdc(n, m%n, r);
+        return r;
+    end_if;
+    return r;
+end_func
+
+main:
+    a = 20;
+    b = 10;
+    mdc(a, b, c);
+    print(a);
+    print(b);
+    print(c);
+end_main

@@ -30,6 +30,18 @@ endMainToken = tokenPrim show update_pos get_token -- end_main
     get_token (EndMain position) = Just (EndMain position)
     get_token _ = Nothing
 
+funcToken :: ParsecT [Token] MemoryState IO Token
+funcToken = tokenPrim show update_pos get_token -- end_main
+  where
+    get_token (Func position) = Just (Func position)
+    get_token _ = Nothing
+
+endFuncToken :: ParsecT [Token] MemoryState IO Token
+endFuncToken = tokenPrim show update_pos get_token -- end_main
+  where
+    get_token (EndFunc position) = Just (EndFunc position)
+    get_token _ = Nothing    
+
 ifToken :: ParsecT [Token] MemoryState IO Token
 ifToken = tokenPrim show update_pos get_token -- if
   where
@@ -78,6 +90,12 @@ endForToken = tokenPrim show update_pos get_token -- if
     get_token (EndFor position) = Just (EndFor position)
     get_token _ = Nothing
 
+returnToken :: ParsecT [Token] MemoryState IO Token
+returnToken = tokenPrim show update_pos get_token -- if
+  where
+    get_token (Return position) = Just (Return position)
+    get_token _ = Nothing
+
 structToken :: ParsecT [Token] MemoryState IO Token
 structToken= tokenPrim show update_pos get_token -- if
   where
@@ -89,7 +107,6 @@ typedefToken= tokenPrim show update_pos get_token -- if
   where
     get_token (Typedef position) = Just (Typedef position)
     get_token _ = Nothing
-
 
 ----------------------------- Simbolos -----------------------------
 
@@ -189,6 +206,13 @@ integerDividerToken :: ParsecT [Token] MemoryState IO Token
 integerDividerToken = tokenPrim show update_pos get_token
   where
     get_token (IntegerDivider position) = Just (IntegerDivider position)
+    get_token _ = Nothing
+  
+-- % Mod
+modToken :: ParsecT [Token] MemoryState IO Token
+modToken = tokenPrim show update_pos get_token
+  where
+    get_token (Mod position) = Just (Mod position)
     get_token _ = Nothing
 
 -- ** Exponent

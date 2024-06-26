@@ -1,7 +1,14 @@
 declaration:
+    a: int;
     b: int;
+    c: bool;
 end_declaration
 
 main:
-    b = 10 + 5;
+    a = 22;
+    b = 10 + 1;
+    c = a%b == 0;
+    print(a);
+    print(b);
+    print(c);
 end_main
