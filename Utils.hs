@@ -26,6 +26,7 @@ fromValuetoTypeValue (FloatValue value pos) = FloatType value pos
 fromValuetoTypeValue (CharValue value pos) = CharType value pos
 fromValuetoTypeValue (StringValue value pos) = StringType value pos
 fromValuetoTypeValue (BoolValue value pos) = BoolType value pos
+--fromTypeValuetoValue (TreeValue value pos) = TreeValue value pos
 
 fromTypeValuetoValue :: TypeValue -> Token
 fromTypeValuetoValue (IntType value pos) = IntValue value pos
@@ -33,6 +34,7 @@ fromTypeValuetoValue (FloatType value pos) = FloatValue value pos
 fromTypeValuetoValue (CharType value pos) = CharValue value pos
 fromTypeValuetoValue (StringType value pos) = StringValue value pos
 fromTypeValuetoValue (BoolType value pos) = BoolValue value pos
+--fromTypeValuetoValue (TreeValue value pos) = TreeValue value pos
 
 {-
   Realiza a operação binária requisitada. Recebendo 3 parâmetros:

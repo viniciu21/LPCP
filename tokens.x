@@ -88,6 +88,7 @@ data TypeValue =
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
     ListType (Int, [TypeValue]) (Int, Int)| -- Tamanho, lista de valores, posição
+    TreeType Int (Int, Int)   | -- Tamanho, lista de valores, posição
     StructType [(String, TypeValue)] (Int, Int)
     deriving (Eq)
 
@@ -97,6 +98,7 @@ instance Show TypeValue where
     show (StringType val pos) = val
     show (CharType val pos) = show val
     show (BoolType val pos) = show val
+    show (TreeType val pos) = show val
     show (ListType (len, val) pos) = show val
     
 data Token = 

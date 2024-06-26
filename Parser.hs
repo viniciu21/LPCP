@@ -90,6 +90,7 @@ declStmt =
   try
     varDeclStmt
     <|> funcDeclStmt
+    <|> treeDeclStmt
 
 -- typeDeclStmt
 
@@ -117,6 +118,19 @@ varDeclStmt = do
   else
     liftIO (putStrLn "Flag is false, skipping variable declaration")
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
+treeDeclStmt :: ParsecT [Token] MemoryState IO [Token]
+treeDeclStmt = do
+  id <- idToken
+  colon <- colonToken
+  varType <- typeToken
+  less <- lessToken
+  intValue <- intValToken
+  greater <- greaterToken
+  semiCol <- semiColonToken
+
+  return ([id] ++ [colon] ++ [varType] ++ [less] ++ [intValue] ++ [greater] ++ [semiCol])
+
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
 funcDeclStmt = do

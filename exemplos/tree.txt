@@ -1,0 +1,8 @@
+declaration: 
+    xtees:tree<x>;
+end_declaration  
+main: 
+    
+    
+
+end_main
