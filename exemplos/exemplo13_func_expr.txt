@@ -13,7 +13,7 @@ end_func
 func somaousub(d, e):
     f: int;
     f = 6;
-    return soma(d, e) + f; # Não está pegando "+ f"
+    return soma(d, e) + f;
 end_func
 
 main:

@@ -285,6 +285,7 @@ findFunction funcId@(Id name1 pos1) ((fid@(Id name2 pos2), params, stmts):funcsT
 
 readValue :: Token -> ParsecT [Token] MemoryState IO Token
 readValue (Id idStr position) = do
+  -- liftIO (putStrLn $ "Estou na função readValue com o Id: " ++ show idStr)
   state <- getState
   let typeStr = getTypeStr (getType (Id idStr position) state)
   inputTerminal <- liftIO getLine

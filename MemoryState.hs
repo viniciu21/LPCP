@@ -117,10 +117,11 @@ callStackUpdateTop newFunc (flag, symTable, funcs, structs, callStack, structFla
   if null callStack
     then error "call stack is empty"
     else (flag, symTable, funcs, structs, init callStack ++ [newFunc], structFlag, funcFlag)
-    
+
 isCallStackEmpty :: MemoryState -> Bool
 isCallStackEmpty (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
   null callStack
+
 {-
   Recebe um Token ID e um Token Type e insere nas variáveis locais da função que está no topo da pilha de ativação.
 -}
@@ -193,7 +194,10 @@ setFuncFlagTrue (flag, vars, funcs, structs, callstack, structflag, funcFlag) = 
 
 -- Function to set the flag to False
 setFuncFlagFalse :: MemoryState -> MemoryState
-setFuncFlagFalse (flag, vars, funcs, structs, callstack, structflag, funcFlag) = (flag, vars, funcs, structs, callstack, structflag, False)
+setFuncFlagFalse (flag, vars, funcs, structs, callStack, structFlag, funcFlag) =
+  let newFuncFlag = (not (null callStack) && funcFlag)
+  in (flag, vars, funcs, structs, callStack, structFlag, newFuncFlag)
+
 
 isFuncFlagTrue :: MemoryState -> Bool
 isFuncFlagTrue (_, _, _, _, _, _, funcFlag) = funcFlag

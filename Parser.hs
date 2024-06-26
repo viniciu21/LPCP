@@ -239,16 +239,17 @@ stmt =
     <|> ifStmt
     <|> whileStmt
     <|> forStmt
-    <|> try (lookAhead funcStmt *> funcStmt)  -- Use lookahead to check for funcStmt
-    <|> decls
+    <|> try (lookAhead decls *> decls)
+    <|> funcStmt  -- Use lookahead to check for funcStmt
     <|> printStmt
 
 returnStmt :: ParsecT [Token] MemoryState IO [Token]
 returnStmt = do
   returnLit <- returnToken
+  -- liftIO(putStrLn $ "Entrei no Return: " ++ show returnLit)
   expr <- assignValExpression
+  -- liftIO(putStrLn $ "O Return: " ++ show returnLit ++ " Avaliou: " ++ show expr)
   semiCol <- semiColonToken
-  liftIO(putStrLn $ "Return: " ++ show returnLit ++ show expr)
   updateState setFuncFlagFalse
   updateState setFlagFalse
   return ([returnLit] ++ [expr] ++ [semiCol])
@@ -278,37 +279,45 @@ printExp2 = do
 ifStmt :: ParsecT [Token] MemoryState IO [Token]
 ifStmt = do
   ifLiteral <- ifToken
+  -- liftIO (putStrLn $ "Entramos no ifStmt:" ++ show ifLiteral)
   expression <- ifParenthesisExpression
+  -- liftIO (putStrLn $ "Avaliamos a expressão no ifStmt:" ++ show expression)
   colonLiteral <- colonToken
-
+  state <- getState
   -- Verifica expressão do if
-  let result = evaluateCondition expression
-  if result
-    then do
-      stmtsBlock <- stmts
-      skip' <- manyTill anyToken (lookAhead endifToken)
-      -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
-      endIfLiteral <- endifToken
-      semiCol1 <- semiColonToken
-      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock ++ [endIfLiteral] ++ [semiCol1])
-    else do
-      skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
-      -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
-      elifStmt' <- elifStmt
-      if null elifStmt'
-        then do
-          skip' <- manyTill anyToken (lookAhead elseToken)
-          -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
-          elseStmt' <- elseStmt
-          endIfLiteral <- endifToken
-          semiCol <- semiColonToken
-          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt' ++ [endIfLiteral] ++ [semiCol])
-        else do
-          skip' <- manyTill anyToken (lookAhead endifToken)
-          -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
-          endIfLiteral <- endifToken
-          semiCol <- semiColonToken
-          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt' ++ [endIfLiteral] ++ [semiCol])
+  if (isFlagTrue state) && (isFuncFlagTrue state) then do
+    let result = evaluateCondition expression
+    if result
+      then do
+        -- Entrou no IF
+        stmtsBlock <- stmts
+        skip' <- manyTill anyToken (lookAhead endifToken)
+        -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
+        endIfLiteral <- endifToken
+        semiCol1 <- semiColonToken
+        return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
+      else do
+        skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
+        -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
+        elifStmt' <- elifStmt
+        if null elifStmt'
+          then do
+            -- Entrou no else
+            skip' <- manyTill anyToken (lookAhead elseToken)
+            -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
+            elseStmt' <- elseStmt
+            endIfLiteral <- endifToken
+            semiCol <- semiColonToken
+            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
+          else do
+            -- Entrou no elif
+            skip' <- manyTill anyToken (lookAhead endifToken)
+            -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
+            endIfLiteral <- endifToken
+            semiCol <- semiColonToken
+            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
+  else 
+    return ([])
 
 elifStmt :: ParsecT [Token] MemoryState IO [Token]
 elifStmt =
@@ -435,7 +444,7 @@ assign = do
           then fail "type mismatch"
         else do
           updateState (updateLocalSymtable id (fromValuetoTypeValue value))
-          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
+          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
           newState <- getState
           -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
@@ -480,8 +489,6 @@ funcStmt = do
   setInput funcStmts
   stmts' <- stmts
   -- liftIO (putStrLn $ "Stmts': " ++ show stmts')
-  updateState setFuncFlagFalse
-  updateState setFlagTrue
   setInput input
 
   -- Pega o valor dos parametros formais e atualiza nos parametros reais
@@ -494,6 +501,10 @@ funcStmt = do
   -- Remove the function from the call stack
   updateState (const (callStackPop updatedState))
   removedState <- getState
+  
+  -- Update the flags before removing the callStack to check if it is empty
+  updateState setFuncFlagFalse
+  updateState setFlagTrue
   -- liftIO (putStrLn $ "State after poping stack: ")
   -- liftIO $ printMemoryState removedState
   -- liftIO (putStrLn $ "FuncStmt Stmts': " ++ show stmts')
@@ -503,6 +514,7 @@ funcStmt = do
 funcExpr :: ParsecT [Token] MemoryState IO Token
 funcExpr = do
   id <- idToken
+  -- liftIO (putStrLn $ "Entrei no funcExpr com id: " ++ show id)
   leftpar <- leftParenthesisToken
   parameters' <- parametersExprBlock
   rightPar <- rightParenthesisToken
@@ -515,19 +527,17 @@ funcExpr = do
   updateState (callStackPush funcMemoryInstance)
 
   state' <- getState
-  liftIO (putStrLn $ "State after update for id: " ++ show id)
-  liftIO $ printMemoryState state'
+  -- liftIO (putStrLn $ "State after update for id: " ++ show id)
+  -- liftIO $ printMemoryState state'
   -- Executa a função
   updateState setFuncFlagTrue
   setInput funcStmts
   stmts' <- stmts
   -- liftIO (putStrLn $ "Stmts': " ++ show stmts')
-  updateState setFuncFlagFalse
-  updateState setFlagTrue
   setInput input
 
   -- Pega o valor dos parametros formais e atualiza nos parametros reais
-  liftIO (putStrLn $ "Antes de passResultValue")
+  -- liftIO (putStrLn $ "Antes de passResultValue")
   newState <- getState
   updateState(passResultValue parameters' (callStackGet newState))
   updatedState <- getState
@@ -537,37 +547,44 @@ funcExpr = do
   -- Remove the function from the call stack
   updateState (const (callStackPop updatedState))
   removedState <- getState
-  liftIO (putStrLn $ "State after poping stack: ")
-  liftIO $ printMemoryState removedState
+  -- liftIO (putStrLn $ "State after poping stack: ")
+  -- liftIO $ printMemoryState removedState
+  
+  -- Update the flags before removing the callStack to check if it is empty
+  updateState setFuncFlagFalse
+  updateState setFlagTrue
 
-  liftIO (putStrLn $ "FuncExpr Stmts': " ++ show stmts')
-  liftIO (putStrLn $ "Second-to-last Stmts': " ++ show (stmts' !! (length stmts' - 2)))
+  -- liftIO (putStrLn $ "FuncExpr Stmts': " ++ show stmts')
+  -- liftIO (putStrLn $ "Second-to-last Stmts': " ++ show (stmts' !! (length stmts' - 2)))
   return (stmts' !! (length stmts' - 2))
 
 ----------------------------- Expressões -----------------------------
 
 assignValExpression :: ParsecT [Token] MemoryState IO Token
 assignValExpression =
+  do
+  -- liftIO (putStrLn $ "Entrei em assignValExpression")
   try
-    relationalExpression
-    <|> try (lookAhead funcExpr *> funcExpr)
-    <|> try (lookAhead arithmeticExpression *> arithmeticExpression)
+    arithmeticExpression
+    <|> relationalExpression
+    -- <|> try (lookAhead funcExpr *> funcExpr)
     <|> logicalExpression
-    <|> parenthesisExpression
-    <|> idTokenExpression
+    -- <|> parenthesisExpression
+    -- <|> idTokenExpression
 
--- <|> call
-
+-- Olhar essa merda de aritmetica
 arithmeticExpression :: ParsecT [Token] MemoryState IO Token
 arithmeticExpression =
-  try
-    plusMinusExpression
+  do
+    -- liftIO (putStrLn $ "Entrei em arithmeticExpression")
+    try plusMinusExpression
     <|> term
 
 -- + | -
 plusMinusExpression :: ParsecT [Token] MemoryState IO Token
 plusMinusExpression = do
   term' <- term
+  -- liftIO (putStrLn $ "Entrei no PlusMinus: " ++ show term')
   result <- arithmeticExpressionRemaining term'
   return result
 
@@ -575,7 +592,9 @@ arithmeticExpressionRemaining :: Token -> ParsecT [Token] MemoryState IO Token
 arithmeticExpressionRemaining termIn =
   do
     arithmeticOp <- binaryArithmeticOperatorLiteral
+    -- liftIO (putStrLn $ "PlusMinus com termo: " ++ show termIn ++ " com simbolo: " ++ show arithmeticOp)
     term' <- term
+    -- liftIO (putStrLn $ "PlusMinus com segundo termo: " ++ show term')
     result <- arithmeticExpressionRemaining (binaryEval termIn arithmeticOp term')
     return result
     <|> return termIn
@@ -583,9 +602,12 @@ arithmeticExpressionRemaining termIn =
 -- < | <= | == | > | >= | !=
 relationalExpression :: ParsecT [Token] MemoryState IO Token
 relationalExpression = do
+  -- liftIO (putStrLn $ "Entrei em relationalExpression")
   arithmeticExpressionRight <- arithOrParentExpression
   relationalOp <- binaryRelationalOperatorLiteral
   arithmeticExpressionLeft <- arithOrParentExpression
+
+  -- liftIO (putStrLn $ "Avaliando o relationalExpression: " ++ show arithmeticExpressionRight ++ show relationalOp ++ show arithmeticExpressionLeft)
 
   let result = binaryEval arithmeticExpressionRight relationalOp arithmeticExpressionLeft
   return result
@@ -593,11 +615,13 @@ relationalExpression = do
 arithOrParentExpression :: ParsecT [Token] MemoryState IO Token
 arithOrParentExpression =
   try
-    parenthesisExpression
-    <|> arithmeticExpression
+    arithmeticExpression
+    <|> parenthesisExpression
 
 logicalExpression :: ParsecT [Token] MemoryState IO Token
 logicalExpression =
+  do
+  -- liftIO (putStrLn $ "Entrei em logicalExpression")
   try
     binaryLogicalExpression
     <|> notExpression
@@ -612,6 +636,9 @@ binaryLogicalExpression = do
   thirdPar <- leftParenthesisToken
   relExpRight <- relationalExpression
   forthPar <- rightParenthesisToken
+
+  -- liftIO (putStrLn $ "Avaliando o binaryLogicalExpression: " ++ show relExpLeft ++ show logicalLiteral ++ show relExpRight)
+
   let result = binaryEval relExpLeft logicalLiteral relExpRight
   return result
 
@@ -647,7 +674,9 @@ relatOrLogicExpression =
 parenthesisExpression :: ParsecT [Token] MemoryState IO Token
 parenthesisExpression = do
   leftPar <- leftParenthesisToken
+  -- liftIO (putStrLn $ "Entrei no parenthesisExpression:" ++ show leftPar)
   expression <- assignValExpression
+  -- liftIO (putStrLn $ "Verifiquei a expressão no parenthesisExpression:" ++ show expression)
   rightPar <- rightParenthesisToken
   return expression
 
@@ -660,13 +689,16 @@ ifParenthesisExpression = do
 
 idTokenExpression :: ParsecT [Token] MemoryState IO Token
 idTokenExpression = do
-  -- liftIO $ liftIO (putStrLn $ "entrou aqui2")
   idToken' <- idToken
+  -- liftIO $ liftIO (putStrLn $ "Entrei no idToken: " ++ show idToken')
+  -- liftIO $ liftIO (putStrLn $ "State no idToken: ")
+  -- state <- getState
+  -- liftIO $ printMemoryState state
   -- liftIO $ print $ show idToken'
   symtable <- getState
   if isFuncFlagTrue symtable
     then do
-      liftIO(putStrLn $ "Estou aqui " ++ show idToken')
+      -- liftIO(putStrLn $ "Estou em idTokenExpression com FuncFlag no id: " ++ show idToken')
       let idVal = getLocalSymtable idToken' symtable 
       return (fromTypeValuetoValue idVal)
   else 
@@ -730,6 +762,8 @@ factorRemaining exponentialIn =
 
 exponential :: ParsecT [Token] MemoryState IO Token
 exponential =
+  do
+  -- liftIO (putStrLn $ "Estou em exponential")
   try
     valueLiteralExpression
     <|> try (lookAhead funcExpr *> funcExpr)
@@ -741,7 +775,7 @@ scanfExpression idScan = do
   lParenthesisLiteral <- leftParenthesisToken
   scanString <- stringValToken
   rParenthesisLiteral <- rightParenthesisToken
-  liftIO $ print scanString
+  liftIO $ printTypeValue scanString
   scanValue <- readValue idScan
   return scanValue
 
@@ -753,7 +787,8 @@ parametersExprBlock =
 
 nparameterExpr :: ParsecT [Token] MemoryState IO [Token]
 nparameterExpr = do
-  parameter <- idToken <|> valueLiteral
+  parameter <- assignValExpression
+  -- liftIO $ liftIO (putStrLn $ "Parametro no nparameterExpr: " ++ show parameter)
   remainingParameters' <- remainingParametersExpr
   return (parameter : remainingParameters')
 
@@ -814,6 +849,6 @@ main = do
       case unsafePerformIO (parser (getTokens fn)) of
         Left err -> print err
         Right ans -> do
-          putStr "Tokens do programa: "
-          print ans
+          putStr ""
+          -- print ans
     _ -> putStrLn "Please inform the input filename. Closing application..."
