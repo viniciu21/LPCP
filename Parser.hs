@@ -85,7 +85,8 @@ declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
     varDeclStmt
-    <|> listDeclStmt 
+    <|> listDeclStmt
+    <|> matrixDeclStmt 
     -- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
@@ -120,6 +121,31 @@ listDeclStmt = do
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
     updateState (symtableInsert (id, listType)) -- primeiro argumento de getDefaultValue não é usado
+    updatedState <- getState
+    liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+  else
+    liftIO (putStrLn "Flag is false, skipping variable declaration")
+  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+
+matrixDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
+matrixDeclStmt = do
+  id@(Id name pos) <- idToken
+  leftBrack1 <- leftBracketToken
+  valList1 <- intValToken
+  rightBrack1 <- rightBracketToken
+  leftBrack2 <-leftBracketToken
+  valList2 <- intValToken
+  rightBrack2 <- rightBracketToken
+  colon <- colonToken
+  varType <- typeToken
+  semiCol <- semiColonToken
+  state <- getState
+
+  --let matrixType = getDefaultValueDataTypes valList (Type "list" pos) varType
+
+  -- A declaração só ocorre quando a flag estiver ativa
+  if isFlagTrue state then do
+    updateState (symtableInsert (id, getDefaultValue varType)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else
@@ -307,7 +333,7 @@ forStmt :: ParsecT [Token] MemoryState IO [Token]
 forStmt = do
   forLiteral <- forToken
   leftParenthesis <- leftParenthesisToken
-  assign' <- assign
+  assign' <- assignToken
   semiCol' <- semiColonToken
   expressionTokens <- manyTill anyToken (lookAhead semiColonToken) -- Armazena sintaticamente a condição
   semiCol'' <- semiColonToken
@@ -334,7 +360,7 @@ forStmt = do
             setInput stmtsBlock
             _ <- many stmts
             setInput updateAssign
-            assign'' <- assign
+            assign'' <- assignToken
             loop
           else setInput input
 
@@ -345,8 +371,7 @@ forStmt = do
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
 assignStmt = do
-  assignTok <- assignVar 
-              <|> assignList
+  assignTok <- assignVar  <|> assignList
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
@@ -377,44 +402,10 @@ assignList  = do
   assignSym <- assignToken
   value <- assignVal id
   state <- getState
+    
+  return (id : assignSym : [value])
+        
 
-  case symtableGet id state of
-    Just (ListType (size, elements) pos) -> do
-      -- Modificar a lista na posição desejada
-      let intVal = read acval :: Int
-      let updatedElements = take intVal elements ++ [fromValuetoTypeValue value] ++ drop (intVal + 1) elements
-      let minhalista = ListType (size, updatedElements) pos
-      updateState (symtableUpdate (id, minhalista))
-      -- Atualizar o estado com a lista modificada
-      newState <- getState
-      -- Verificar se a flag está ativa para fazer a atribuição
-      if isFlagTrue newState then do
-        liftIO $ putStrLn $ "Atualização de estado sobre a variável: " ++ show id ++ show newState
-        return [id, assignSym, value]
-      else
-        return [id, assignSym, value]
-      
-    _ -> fail "Variável não encontrada na tabela de símbolos"
-
-
-  --let list = case symtableGet id state of
-  --      Just val -> return val
-  --      Nothing -> fail "Variable not found"
-
-  --if not (compatible (fromTypeValuetoValue (getElementType list)) value)
-  --  then fail "type mismatch"
-  --  else do
-  --    -- A atribuição só ocorre quando a flag estiver ativa
-  --    if isFlagTrue state then do
-  --      -- change especific value in position valList
-  --      let newlist = 
-  --      -- updateState with (id, newList)
-  --      updateState (symtableUpdate (id, newlist))
-  --      newState <- getState
-  --      liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id ++ show newState)
-  --      return (id : assignSym : [value])
-  --    else
-  --      return (id : assignSym : [value])
 
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token

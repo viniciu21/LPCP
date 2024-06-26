@@ -27,6 +27,9 @@ getDefaultValueDataTypes :: Token -> Token -> Token -> TypeValue
 getDefaultValueDataTypes (IntValue val _) (Type "list" (l, c)) varType = ListType (val, returnDefaultList val [] varType) (l, c)
 getDefaultValueDataTypes _ _ _ = error "Unexpected type for number of elements"
 
+--getDefaultValueMatrixTypes :: (Token, Token) -> Token -> Token -> TypeValue
+--getDefaultValueMatrixTypes (IntValue val _, IntValue val2 _) (Type "matrix" (l, c)) varType = MatrixType ((val, val2,) returnDefaultMatrix (val, val2) [[]] varType ) (l,c)
+
 returnDefaultList :: Int -> [TypeValue] -> Token -> [TypeValue]
 returnDefaultList 0 voidList _ = voidList
 returnDefaultList val voidList varType =
@@ -137,8 +140,8 @@ getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _) =
     then fromTypeValuetoValue value
     else getType (Id idStr1 pos1) (False, listTail, [], [], [], False)
 
-getElementType :: [TypeValue] -> TypeValue
-getElementType (x:_) = x
+getElementType :: TypeValue -> TypeValue
+getElementType (ListType (n, elements) pos) = head elements
 
 getTypeStr :: Token -> String
 getTypeStr (IntValue _ _) = "int"
