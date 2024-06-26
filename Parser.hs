@@ -78,6 +78,7 @@ declStmt =
   try
     varDeclStmt 
     -- typeDeclStmt
+    -- structDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
@@ -99,13 +100,14 @@ varDeclStmt = do
       liftIO (putStrLn "Flag is false, skipping variable declaration")
       return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
--- structDeclStmt :: Parsec [Token] MemoryState IO ([Token])
--- structDeclStmt = do
---   typedef <- typedefToken
---   struct  <- structToken
---   leftCurlyBrackets <- leftCurlyBracketsToken
---   decls' <- decls
---   -- id <- idToken
+structDeclStmt :: Parsec [Token] MemoryState IO ([Token])
+structDeclStmt = do
+  typedef <- typedefToken
+  struct  <- structToken
+  leftCurlyBrackets <- leftCurlyBracketsToken
+  decls' <- decls
+  id <- idToken
+  
 
 
 

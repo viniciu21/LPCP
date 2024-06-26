@@ -81,11 +81,11 @@ symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack,
 -}
 -- Function to set the flag to True
 setStructFlagTrue :: MemoryState -> MemoryState
-setStructFlagTrue (flag, vars, funcs, structs, callstack, structflag) = (True, vars, funcs, structs, callstack, structflag)
+setStructFlagTrue (flag, vars, funcs, structs, callstack, structflag) = (flag, vars, funcs, structs, callstack, True)
 
 -- Function to set the flag to False
 setStructFlagFalse :: MemoryState -> MemoryState
-setStructFlagFalse (flag, vars, funcs, structs, callstack, structflag) = (False, vars, funcs, structs, callstack, structflag)
+setStructFlagFalse (flag, vars, funcs, structs, callstack, structflag) = (flag, vars, funcs, structs, callstack, False)
 
 isStructFlagTrue :: MemoryState -> Bool
 isStructFlagTrue (_, _, _, _, _, structflag) = structflag
