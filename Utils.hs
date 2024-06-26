@@ -213,7 +213,7 @@ parametersValuesFromIDs (literal : parametersTail) symtable =
 getValue :: Token -> MemoryState -> Maybe TypeValue
 getValue varId memoryState@(flag, locals, _, _, _, _, _) =
   if isFuncFlagTrue memoryState
-    then Just (getLocalSymtable varId memoryState)
+    then getLocalSymtable varId memoryState
     else symtableGet varId memoryState
 {-
   checkFunctionParameters é chamada para verificar se uma função com o ID fornecido existe no MemoryState e se o número de parâmetros fornecidos corresponde ao número de parâmetros definidos na função.
@@ -251,11 +251,13 @@ passParametersValues newValues oldParams = zip (map fst oldParams) newValues
 passResultValue :: [Token] -> (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
 passResultValue [] _ state = state
 passResultValue (param@(Id _ _) : paramsTail) (funcName, (realParamId, realParamVal):realParamsTail, stmts) state =
-  let updatedValue = getLocalSymtable realParamId state
-      updatedState = if isCallStackEmpty state
-        then symtableUpdate (param, updatedValue) state 
-      else updateLocalSymtable param updatedValue state
-  in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
+  case getLocalSymtable realParamId state of
+    Just updatedValue ->
+      let updatedState = if isCallStackEmpty state
+                         then symtableUpdate (param, updatedValue) state
+                         else updateLocalSymtable param updatedValue state
+      in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
+    Nothing -> error "Variable not found in local symtable"
 passResultValue (_ : paramsTail) (funcName, _ : realParamsTail, stmts) state =
   passResultValue paramsTail (funcName, realParamsTail, stmts) state
 passResultValue _ _ state = state

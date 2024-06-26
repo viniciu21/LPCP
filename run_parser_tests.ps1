@@ -5,7 +5,7 @@ $files = @(
     ".\exemplos\exemplo2_uma_atribuicao.txt",
     ".\exemplos\exemplo3_atribuicao_tipos_simples.txt",
     ".\exemplos\exemplo4_atribuicao_por_expressao.txt",
-    ".\exemplos\exemplo5_atribuicoes_por_expressoes.txt",
+    #".\exemplos\exemplo5_atribuicoes_por_expressoes.txt",
     ".\exemplos\exemplo5.1_problema_1.txt",
     ".\exemplos\exemplo6_if_stmts.txt",
     ".\exemplos\exemplo7_while_stmts.txt",

@@ -40,18 +40,23 @@ isFlagTrue (flag, _, _, _, _, _, _) = flag
   symtableGet recebe um Token ID (Id String (l,c)) referente a uma variável, e verifica se ela existe na tabela de símbolos e, caso exista, retorna seu valor.
 -}
 symtableGet :: Token -> MemoryState -> Maybe TypeValue
-symtableGet _ (_, [], _, _, _, _, _) = fail "variable not found"
+symtableGet _ (_, [], _, _, _, _, _) = Nothing
 symtableGet (Id idStr1 pos1) (_, (Id idStr2 pos2, value2) : listTail, _, _, _, _, _) =
   if idStr1 == idStr2
     then Just value2
     else symtableGet (Id idStr1 pos1) (False, listTail, [], [], [], False, False)
 symtableGet _ _ = Nothing
 
+
 {-
-  SymtableInsert recebe uma tupla (Token ID, Token TypeValue) e armazena na tabela de simbolos
+  SymtableInsert recebe uma tupla (Token ID, Token TypeValue) e armazena na tabela de simbolos se ela ainda não existir
 -}
 symtableInsert :: (Token, TypeValue) -> MemoryState -> MemoryState
-symtableInsert newSymbol (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = (flag, symtable ++ [newSymbol], funcs, structs, callstack, structflag, funcFlag)
+symtableInsert newSymbol@(newId, _) state@(flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  case symtableGet newId state of
+    Nothing -> (flag, symtable ++ [newSymbol], funcs, structs, callstack, structflag, funcFlag)
+    Just _  -> error $ "Variable " ++ show newId ++ " already declared."
+
 
 {-
   symtableUpdate recebe uma tupla (Token ID, Token Value) e atualiza o valor na tabela de símbolos, se o Token ID já estiver na tabela
@@ -123,15 +128,20 @@ isCallStackEmpty (flag, symTable, funcs, structs, callStack, structFlag, funcFla
   null callStack
 
 {-
-  Recebe um Token ID e um Token Type e insere nas variáveis locais da função que está no topo da pilha de ativação.
+  Recebe um Token ID e um Token Type e insere nas variáveis locais da função que está no topo da pilha de ativação, se já não existir dentre as varíaveis.
 -}
 insertLocalSymtable :: Token -> Token -> MemoryState -> MemoryState
 insertLocalSymtable newId newVarType memoryState =
   let (funcId, locals, stmts) = callStackGet memoryState
       newVar = (newId, getDefaultValue newVarType)
-      updatedLocals = locals ++ [newVar]
-      updatedFunc = (funcId, updatedLocals, stmts)
-  in callStackUpdateTop updatedFunc memoryState
+      variableExists = case getLocalSymtable newId memoryState of
+                         Just _  -> True
+                         Nothing -> False
+  in if variableExists
+     then error $ "Variable " ++ show newId ++ " already declared in local scope."
+     else let updatedLocals = locals ++ [newVar]
+              updatedFunc = (funcId, updatedLocals, stmts)
+          in callStackUpdateTop updatedFunc memoryState
 
 {-
   Recebe um Token ID e um TypeValue que serão atualizados no escopo local da função do topo da pilha de ativação.
@@ -152,15 +162,15 @@ updateLocalSymtable varId@(Id name1 pos1) newValue memoryState =
 {-
   Recebe um Token ID e verifica se ele existe no escopo local da função do topo da pilha de ativação. Se existir, retorna o seu TypeValue
 -}
-getLocalSymtable :: Token -> MemoryState -> TypeValue
+getLocalSymtable :: Token -> MemoryState -> Maybe TypeValue
 getLocalSymtable varId@(Id name1 _) memoryState =
   let (_, locals, _) = callStackGet memoryState
   in findVarType locals
   where
-    findVarType :: [(Token, TypeValue)] -> TypeValue
-    findVarType [] = error "variable not found"
+    findVarType :: [(Token, TypeValue)] -> Maybe TypeValue
+    findVarType [] = Nothing
     findVarType ((localVarId@(Id name2 _), localVarType):rest)
-      | name1 == name2 = localVarType
+      | name1 == name2 = Just localVarType
       | otherwise = findVarType rest
 
 

@@ -16,4 +16,7 @@ main:
         b = 15;
         c = 15;
     end_if;
+    print(a);
+    print(b);
+    print(c);
 end_main

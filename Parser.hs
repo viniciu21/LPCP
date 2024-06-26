@@ -108,14 +108,17 @@ varDeclStmt = do
         then do
         updateState (insertLocalSymtable id varType)
         updatedState <- getState
-        liftIO (putStrLn $ "Declaracao de variavel em função local: " ++ show id)
+        return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+        -- liftIO (putStrLn $ "Declaracao de variavel em função local: " ++ show id)
         -- liftIO $ printMemoryState updatedState
       else do
         updateState (symtableInsert (id, getDefaultValue varType))
         updatedState <- getState
-        liftIO (putStrLn $ "Declaracao de variavel no programa principal: " ++ show id)
-  else
+        -- liftIO (putStrLn $ "Declaracao de variavel no programa principal: " ++ show id)
+        return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+  else do
     liftIO (putStrLn "Flag is false, skipping variable declaration")
+    return ([id] ++ [colon] ++ [varType] ++ [semiCol])
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -131,7 +134,7 @@ funcDeclStmt = do
   let parameters' = parametersDefaultDecl parameters
   updateState (funcTableInsert id parameters' [])
   updatedState <- getState
-  liftIO (putStrLn $ "Declaracao de função: " ++ show id ++ show updatedState)
+  -- liftIO (putStrLn $ "Declaracao de função: " ++ show id ++ show updatedState)
 
   return ([id] ++ [colon] ++ parameters ++ [to] ++ [returnType] ++ [semiCol])
 
@@ -182,7 +185,7 @@ funcBlock = do
   endFor <- endFuncToken
   updateState (funcTableUpdateParamStmts name parameters stmts)
   updatedState <- getState
-  liftIO (putStrLn $ "Implementação de função salvo na memória: " ++ show name)
+  -- liftIO (putStrLn $ "Implementação de função salvo na memória: " ++ show name)
   -- liftIO $ printMemoryState updatedState
 
   return [funcLiteral]
@@ -285,39 +288,36 @@ ifStmt = do
   colonLiteral <- colonToken
   state <- getState
   -- Verifica expressão do if
-  if (isFlagTrue state) && (isFuncFlagTrue state) then do
-    let result = evaluateCondition expression
-    if result
-      then do
-        -- Entrou no IF
-        stmtsBlock <- stmts
-        skip' <- manyTill anyToken (lookAhead endifToken)
-        -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
-        endIfLiteral <- endifToken
-        semiCol1 <- semiColonToken
-        return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
-      else do
-        skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
-        -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
-        elifStmt' <- elifStmt
-        if null elifStmt'
-          then do
-            -- Entrou no else
-            skip' <- manyTill anyToken (lookAhead elseToken)
-            -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
-            elseStmt' <- elseStmt
-            endIfLiteral <- endifToken
-            semiCol <- semiColonToken
-            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
-          else do
-            -- Entrou no elif
-            skip' <- manyTill anyToken (lookAhead endifToken)
-            -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
-            endIfLiteral <- endifToken
-            semiCol <- semiColonToken
-            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
-  else 
-    return ([])
+  let result = evaluateCondition expression
+  if result
+    then do
+      -- Entrou no IF
+      stmtsBlock <- stmts
+      skip' <- manyTill anyToken (lookAhead endifToken)
+      -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
+      endIfLiteral <- endifToken
+      semiCol1 <- semiColonToken
+      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
+    else do
+      skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
+      -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
+      elifStmt' <- elifStmt
+      if null elifStmt'
+        then do
+          -- Entrou no else
+          skip' <- manyTill anyToken (lookAhead elseToken)
+          -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
+          elseStmt' <- elseStmt
+          endIfLiteral <- endifToken
+          semiCol <- semiColonToken
+          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
+        else do
+          -- Entrou no elif
+          skip' <- manyTill anyToken (lookAhead endifToken)
+          -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
+          endIfLiteral <- endifToken
+          semiCol <- semiColonToken
+          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
 
 elifStmt :: ParsecT [Token] MemoryState IO [Token]
 elifStmt =
@@ -444,7 +444,7 @@ assign = do
           then fail "type mismatch"
         else do
           updateState (updateLocalSymtable id (fromValuetoTypeValue value))
-          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
+          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel local: " ++ show id)
           newState <- getState
           -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
@@ -454,7 +454,7 @@ assign = do
         else do
           updateState (symtableUpdate (id, fromValuetoTypeValue value))
           newState <- getState
-          liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id)
+          -- liftIO (putStrLn $ "Atualizacao de estado sobre a variavel: " ++ show id)
           -- liftIO $ printMemoryState newState
           return (id : assignSym : [value])
   else
@@ -697,10 +697,9 @@ idTokenExpression = do
   -- liftIO $ print $ show idToken'
   symtable <- getState
   if isFuncFlagTrue symtable
-    then do
-      -- liftIO(putStrLn $ "Estou em idTokenExpression com FuncFlag no id: " ++ show idToken')
-      let idVal = getLocalSymtable idToken' symtable 
-      return (fromTypeValuetoValue idVal)
+    then case getLocalSymtable idToken' symtable of
+           Just idVal -> return (fromTypeValuetoValue idVal)
+           Nothing -> fail "Variable not found in local symtable"
   else 
     case symtableGet idToken' symtable of
       Just val -> return (fromTypeValuetoValue val)
