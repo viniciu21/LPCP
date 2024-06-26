@@ -46,6 +46,8 @@ program = do
       else stmts
 
   endMain <- endMainToken
+  state <- getState
+  liftIO $ printMemoryState state
   eof
   return (declBlock' ++ [main] ++ [colonM] ++ stmts' ++ [endMain])
 
@@ -92,6 +94,19 @@ declStmt =
     <|> funcDeclStmt
     <|> structDeclStmt
 
+structVarDecls :: ParsecT [Token] MemoryState IO [Token]
+structVarDecls =
+  do
+    first <- varDeclStmt
+    next <- remainingstructVarDecls
+    return (first ++ next)
+
+remainingstructVarDecls :: ParsecT [Token] MemoryState IO [Token]
+remainingstructVarDecls =
+  try
+    structVarDecls
+    <|> return []
+
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 varDeclStmt = do
   id <- idToken
@@ -102,13 +117,20 @@ varDeclStmt = do
   state <- getState
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    if isFuncFlagTrue state
-      then do
-        updateState (insertLocalSymtable id varType)
+    if isFuncFlagTrue state then do
+      updateState (insertLocalSymtable id varType)
+      updatedState <- getState
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+    -- liftIO (putStrLn $ "Declaracao de variavel em função local: " ++ show id)
+    -- liftIO $ printMemoryState updatedState
+    else do
+      if isStructFlagTrue state then do
+        -- liftIO (putStrLn $ "Estou na decl de struct")
+        updateState (insertVarInTopStruct id varType)
         updatedState <- getState
+        -- liftIO (putStrLn $ "Declaracao de variavel dentro da struct: " ++ show id)
+        -- liftIO $ printMemoryState updatedState
         return ([id] ++ [colon] ++ [varType] ++ [semiCol])
-      -- liftIO (putStrLn $ "Declaracao de variavel em função local: " ++ show id)
-      -- liftIO $ printMemoryState updatedState
       else do
         updateState (symtableInsert (id, getDefaultValue varType))
         updatedState <- getState
@@ -124,9 +146,27 @@ structDeclStmt = do
   typedef <- typedefToken
   struct  <- structToken
   leftCurlyBrackets <- leftCurlyBracketsToken
-  decls' <- decls
+  declsTokens <- manyTill anyToken (lookAhead rightCurlyBracketsToken)
+  rightCurlyBrackets <- rightCurlyBracketsToken
   id <- idToken
-  return ([typedef] ++ [struct] ++ [leftCurlyBrackets] ++ decls' ++ [id])
+  -- liftIO (putStrLn $ "structDeclStmt: " ++ show id)
+  semiCol <- semiColonToken
+  input <- getInput
+
+  state <- getState
+  updateState (setStructFlagTrue)
+  updateState (insertStruct id [])
+  updatedState <- getState
+  -- liftIO $ printMemoryState updatedState
+
+  setInput declsTokens
+
+  decls' <- structVarDecls
+
+  updateState (setStructFlagFalse)
+  setInput input
+
+  return ([typedef] ++ [struct] ++ [leftCurlyBrackets] ++ decls' ++ [rightCurlyBrackets] ++ [id] ++ [semiCol])
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
 funcDeclStmt = do

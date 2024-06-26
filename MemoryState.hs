@@ -9,12 +9,12 @@ type MemoryState = (
                     Bool, -- Flag
                     [(Token, TypeValue)], -- Symtable
                     [(Token, [(Token, TypeValue)], [Token])], -- Funcs
-                    [[(Token, TypeValue)]], -- Structs
+                    [(Token, [(Token, TypeValue)])], -- Structs
                     CallStack, -- Callstack
                     Bool, -- StructFlag
                     Bool -- FuncFlag
                     )
-type CallStack = [(Token, [(Token, TypeValue)], [Token])]                 
+type CallStack = [(Token, [(Token, TypeValue)], [Token])]
 
 ----------------------------- Flag -----------------------------
 {-
@@ -62,7 +62,6 @@ symtableInsert newSymbol@(newId, _) state@(flag, symtable, funcs, structs, calls
   case symtableGet newId state of
     Nothing -> (flag, symtable ++ [newSymbol], funcs, structs, callstack, structflag, funcFlag)
     Just _  -> error $ "Variable " ++ show newId ++ " already declared."
-
 
 {-
   symtableUpdate recebe uma tupla (Token ID, Token Value) e atualiza o valor na tabela de símbolos, se o Token ID já estiver na tabela
@@ -212,13 +211,79 @@ getLocalSymtable varId@(Id name1 _) memoryState =
       | otherwise = findVarType rest
 
 getLocalSymtableLength :: MemoryState -> Int
-getLocalSymtableLength memoryState = 
+getLocalSymtableLength memoryState =
   let (funcId, locals, stmts) = callStackGet memoryState
   in length locals
 
 ----------------------------- Structs -----------------------------
--- insertStruct :: Token -> [Token] -> MemoryState -> MemoryState
--- insertStruct name decls 
+structGetByID :: Token -> MemoryState -> Maybe [(Token, TypeValue)]
+structGetByID _ (_, _, _, [], _, _, _) = Nothing  -- No structs defined
+structGetByID id@(Id name1 _) (_, _, _, structs, _, _, _) =
+  case findStruct name1 structs of
+    Just (_, values) -> Just values
+    Nothing -> Nothing
+  where
+    findStruct :: String -> [(Token, [(Token, TypeValue)])] -> Maybe (Token, [(Token, TypeValue)])
+    findStruct _ [] = Nothing
+    findStruct name ((structId@(Id name2 _), values) : rest)
+      | name == name2 = Just (structId, values)
+      | otherwise = findStruct name rest
+
+structGetTop :: MemoryState -> (Token, [(Token, TypeValue)])
+structGetTop (_, _, _, [], _, _, _) = error "structs is empty"
+structGetTop (_, _, _, structs, _, _, _) = last structs
+
+insertStruct :: Token -> [(Token, TypeValue)] -> MemoryState -> MemoryState
+insertStruct name decls state@(flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  case structGetByID name state of
+    Nothing -> (flag, symtable, funcs, structs ++ [(name, decls)], callstack, structflag, funcFlag)
+    Just _ -> error $ "Struct " ++ show name ++ " already declared."
+
+updateStruct :: Token -> (Token, TypeValue) -> MemoryState -> MemoryState
+updateStruct structId@(Id name1 _) updateVar@(Id name2 _, newVal) state@(flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  let updatedStructs = map updateIfNeeded structs
+  in (flag, symtable, funcs, updatedStructs, callstack, structflag, funcFlag)
+  where
+    updateIfNeeded :: (Token, [(Token, TypeValue)]) -> (Token, [(Token, TypeValue)])
+    updateIfNeeded (currentStructId@(Id name3 _), fields)
+      | name1 == name3 = (currentStructId, updateVarInFields fields)
+      | otherwise = (currentStructId, fields)
+
+    updateVarInFields :: [(Token, TypeValue)] -> [(Token, TypeValue)]
+    updateVarInFields [] = error "Variable not found"
+    updateVarInFields ((fieldId@(Id name4 _), oldValue) : rest)
+      | name4 == name2 = (fieldId, newVal) : rest
+      | otherwise = (fieldId, oldValue) : updateVarInFields rest
+
+updateStructInTop :: (Token, [(Token, TypeValue)]) -> MemoryState -> MemoryState
+updateStructInTop updatedStruct (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
+  if null structs
+    then error "structs is empty"
+    else (flag, symTable, funcs, init structs ++[updatedStruct], callStack, structFlag, funcFlag) 
+
+insertVarInTopStruct :: Token -> Token -> MemoryState -> MemoryState
+insertVarInTopStruct newVar newVarType state =
+  let (topStructId, topFields) = structGetTop state
+      newVariable = (newVar, getDefaultValue newVarType)
+      variableExists = case getVarInTopStruct newVar state of
+                         Just _  -> True
+                         Nothing -> False
+  in if variableExists
+     then error $ "Variable " ++ show newVar ++ " already declared in the struct."
+     else let updatedFields = topFields ++ [newVariable]
+              updatedStruct = (topStructId, updatedFields)
+          in updateStructInTop updatedStruct state
+
+getVarInTopStruct :: Token -> MemoryState -> Maybe TypeValue
+getVarInTopStruct varId@(Id name1 _) memoryState =
+  let (_, variables) = structGetTop memoryState
+  in findVarType variables
+  where
+    findVarType :: [(Token, TypeValue)] -> Maybe TypeValue
+    findVarType [] = Nothing
+    findVarType ((localVarId@(Id name2 _), localVarType):rest)
+      | name1 == name2 = Just localVarType
+      | otherwise = findVarType rest
 
 ----------------------------- StructFlag -----------------------------
 {-
