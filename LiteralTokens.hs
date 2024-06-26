@@ -207,6 +207,13 @@ integerDividerToken = tokenPrim show update_pos get_token
   where
     get_token (IntegerDivider position) = Just (IntegerDivider position)
     get_token _ = Nothing
+  
+-- % Mod
+modToken :: ParsecT [Token] MemoryState IO Token
+modToken = tokenPrim show update_pos get_token
+  where
+    get_token (Mod position) = Just (Mod position)
+    get_token _ = Nothing
 
 -- ** Exponent
 exponentToken :: ParsecT [Token] MemoryState IO Token

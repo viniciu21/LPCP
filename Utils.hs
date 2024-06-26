@@ -6,6 +6,7 @@ module Utils where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class
+import Data.List (intercalate)
 import MemoryState
 import System.IO.Unsafe (unsafePerformIO)
 import Text.Parsec
@@ -63,6 +64,8 @@ binaryEval (IntValue x p) (Exponent _) (IntValue y _) = IntValue (x ^ y) p
 binaryEval (IntValue x p) (Exponent _) (FloatValue y _) = FloatValue (fromIntegral x ** y) p
 binaryEval (FloatValue x p) (Exponent _) (IntValue y _) = FloatValue (x ^ y) p
 binaryEval (FloatValue x p) (Exponent _) (FloatValue y _) = FloatValue (x ** y) p
+-- Mod
+binaryEval (IntValue x p) (Mod _) (IntValue y _) = IntValue (x `mod` y) p
 -- Divisão Iteira
 binaryEval (IntValue x p) (IntegerDivider _) (IntValue y _) = IntValue (x `div` y) p
 -- Divisão regular
@@ -92,7 +95,7 @@ binaryEval (FloatValue x p) (GreaterEqual _) (IntValue y _) = BoolValue (x >= fr
 binaryEval (IntValue x p) (GreaterEqual _) (FloatValue y _) = BoolValue (fromIntegral x >= y) p
 binaryEval (FloatValue x p) (GreaterEqual _) (FloatValue y _) = BoolValue (x >= y) p
 -- ==
-binaryEval (IntValue x p) (Equal _) (IntValue y _) = BoolValue (fromIntegral x == fromIntegral y) p
+binaryEval (IntValue x p) (Equal _) (IntValue y _) = BoolValue (x == y) p
 binaryEval (FloatValue x p) (Equal _) (IntValue y _) = BoolValue (x == fromIntegral y) p
 binaryEval (IntValue x p) (Equal _) (FloatValue y _) = BoolValue (fromIntegral x == y) p
 binaryEval (FloatValue x p) (Equal _) (FloatValue y _) = BoolValue (x == y) p
@@ -130,11 +133,11 @@ getType (Id idStr1 pos1) (_, (Id idStr2 _, value) : listTail, _, _, _, _, _) =
 getLocalType :: Token -> MemoryState -> Token
 getLocalType varId@(Id name1 pos1) memoryState =
   let (_, locals, _) = callStackGet memoryState
-  in findVarType locals
+   in findVarType locals
   where
     findVarType :: [(Token, TypeValue)] -> Token
     findVarType [] = error "variable not found"
-    findVarType ((localVarId@(Id name2 pos2), localVarType):rest)
+    findVarType ((localVarId@(Id name2 pos2), localVarType) : rest)
       | name2 == name1 = fromTypeValuetoValue localVarType
       | otherwise = findVarType rest
 
@@ -205,7 +208,7 @@ parametersValuesFromIDs :: [Token] -> MemoryState -> [Token]
 parametersValuesFromIDs [] _ = []
 parametersValuesFromIDs (parameter@(Id _ _) : parametersTail) symtable =
   case getValue parameter symtable of
-    Just val -> fromTypeValuetoValue  val : parametersValuesFromIDs parametersTail symtable
+    Just val -> fromTypeValuetoValue val : parametersValuesFromIDs parametersTail symtable
     Nothing -> error "Variable not found"
 parametersValuesFromIDs (literal : parametersTail) symtable =
   literal : parametersValuesFromIDs parametersTail symtable
@@ -215,6 +218,7 @@ getValue varId memoryState@(flag, locals, _, _, _, _, _) =
   if isFuncFlagTrue memoryState
     then getLocalSymtable varId memoryState
     else symtableGet varId memoryState
+
 {-
   checkFunctionParameters é chamada para verificar se uma função com o ID fornecido existe no MemoryState e se o número de parâmetros fornecidos corresponde ao número de parâmetros definidos na função.
 
@@ -234,14 +238,15 @@ checkFunctionParameters funcId params (_, _, funcs, _, _, _, _) =
     Nothing -> error "function not found"
     Just func@(fid, definedParams, stmts) ->
       if length params == length definedParams
-        then if allParameterTypesMatch params definedParams
-          then (fid, passParametersValues (map fromValuetoTypeValue params) definedParams, stmts)
-          else error "parameter type mismatch"
+        then
+          if allParameterTypesMatch params definedParams
+            then (fid, passParametersValues (map fromValuetoTypeValue params) definedParams, stmts)
+            else error "parameter type mismatch"
         else error "parameter count mismatch"
 
 allParameterTypesMatch :: [Token] -> [(Token, TypeValue)] -> Bool
 allParameterTypesMatch [] [] = True
-allParameterTypesMatch (param:paramsTail) ((_, expectedType):definedParamsTail) =
+allParameterTypesMatch (param : paramsTail) ((_, expectedType) : definedParamsTail) =
   matchTypeValues (fromValuetoTypeValue param) expectedType && allParameterTypesMatch paramsTail definedParamsTail
 allParameterTypesMatch _ _ = False
 
@@ -250,18 +255,15 @@ passParametersValues newValues oldParams = zip (map fst oldParams) newValues
 
 passResultValue :: [Token] -> (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
 passResultValue [] _ state = state
-passResultValue (param@(Id _ _) : paramsTail) (funcName, (realParamId, realParamVal):realParamsTail, stmts) state =
-  case getLocalSymtable realParamId state of
-    Just updatedValue ->
-      let updatedState = if isCallStackEmpty state
-                         then symtableUpdate (param, updatedValue) state
-                         else updateLocalSymtable param updatedValue state
-      in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
-    Nothing -> error "Variable not found in local symtable"
+passResultValue (param@(Id _ _) : paramsTail) (funcName, (realParamId, realParamVal) : realParamsTail, stmts) state =
+      let updatedState =
+            if isCallStackEmpty state
+              then symtableUpdate (param, realParamVal) state
+              else updateLocalSymtable param realParamVal state
+       in passResultValue paramsTail (funcName, realParamsTail, stmts) updatedState
 passResultValue (_ : paramsTail) (funcName, _ : realParamsTail, stmts) state =
   passResultValue paramsTail (funcName, realParamsTail, stmts) state
 passResultValue _ _ state = state
-
 
 {-
   findFunction é uma função auxiliar usada para procurar uma função específica na lista de funções dentro do MemoryState.
@@ -279,7 +281,7 @@ passResultValue _ _ state = state
 -}
 findFunction :: Token -> [(Token, [(Token, TypeValue)], [Token])] -> Maybe (Token, [(Token, TypeValue)], [Token])
 findFunction _ [] = Nothing
-findFunction funcId@(Id name1 pos1) ((fid@(Id name2 pos2), params, stmts):funcsTail)
+findFunction funcId@(Id name1 pos1) ((fid@(Id name2 pos2), params, stmts) : funcsTail)
   | name1 == name2 = Just (fid, params, stmts)
   | otherwise = findFunction funcId funcsTail
 
@@ -303,11 +305,36 @@ readValue (Id idStr position) = do
     _ -> error "Unsupported type"
 
 printMemoryState :: MemoryState -> IO ()
-printMemoryState (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
-  liftIO (putStrLn $ "Flag: " ++ show flag ++
-  "\nSymtable: "++ show symtable ++
-  "\nFuncs: "++ show funcs ++
-  "\nStructs: "++ show structs ++
-  "\nCallstack: "++ show callstack ++
-  "\nStructflag: "++ show structflag ++
-  "\nFuncFlag: "++ show funcFlag)
+printMemoryState (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = do
+  let formattedCallStack = formatCallStack callstack
+  liftIO $
+    putStrLn $
+      "Flag: "
+        ++ show flag
+        ++ "\nSymtable: "
+        ++ show symtable
+        ++ "\nFuncs: "
+        ++ show funcs
+        ++ "\nStructs: "
+        ++ show structs
+        ++ "\nCallstack: "
+        ++ formattedCallStack
+        ++ "\nStructflag: "
+        ++ show structflag
+        ++ "\nFuncFlag: "
+        ++ show funcFlag
+
+formatCallStack :: [(Token, [(Token, TypeValue)], [Token])] -> String
+formatCallStack cs = "[\n" ++ intercalate "\n" (map showCallStackItem cs) ++ "\n]"
+
+showCallStackItem :: (Token, [(Token, TypeValue)], [Token]) -> String
+showCallStackItem (token, locals, stmts) =
+  "(\n  Function: " ++ show token ++ ",\n  Locals: " ++ show locals ++ ",\n  Statements: " ++ show stmts ++ "\n)"
+
+lookAheadTwoTokens :: ParsecT [Token] MemoryState IO (Token, Token)
+lookAheadTwoTokens = try $ do
+  tokens <- lookAhead (do
+    t1 <- anyToken
+    t2 <- anyToken
+    return (t1, t2))
+  return tokens

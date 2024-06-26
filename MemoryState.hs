@@ -10,10 +10,11 @@ type MemoryState = (
                     [(Token, TypeValue)], -- Symtable
                     [(Token, [(Token, TypeValue)], [Token])], -- Funcs
                     [[(Token, TypeValue)]], -- Structs
-                    [(Token, [(Token, TypeValue)], [Token])], -- Callstack
+                    CallStack, -- Callstack
                     Bool, -- StructFlag
                     Bool -- FuncFlag
                     )
+type CallStack = [(Token, [(Token, TypeValue)], [Token])]                 
 
 ----------------------------- Flag -----------------------------
 {-

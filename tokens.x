@@ -29,6 +29,7 @@ tokens :-
     "*"                                       { \p s -> Times (getLC p) } 
     "/"                                       { \p s -> Divider (getLC p) } 
     "//"                                      { \p s -> IntegerDivider (getLC p) } 
+    "%"                                      { \p s -> Mod (getLC p) }
     "**"                                      { \p s -> Exponent (getLC p) } 
     "&&"                                      { \p s -> And (getLC p) } 
     "||"                                      { \p s -> Or (getLC p) } 
@@ -39,7 +40,8 @@ tokens :-
     ">"                                       { \p s -> Greater (getLC p) }
     ">="                                       { \p s -> GreaterEqual (getLC p) } 
     "=="                                      { \p s -> Equal (getLC p) } 
-    "!="                                      { \p s -> Different (getLC p) } 
+    "!="                                      { \p s -> Different (getLC p) }
+    "void"                                    { \p s -> Type s (getLC p) } 
     "int"                                     { \p s -> Type s (getLC p) } 
     "float"                                   { \p s -> Type s (getLC p) } 
     "char"                                    { \p s -> Type s (getLC p) } 
@@ -115,6 +117,7 @@ data Token =
     Times (Int, Int)                                   |
     Divider (Int, Int)                                 |
     IntegerDivider (Int, Int)                          |
+    Mod (Int, Int)                                     |
     Exponent (Int, Int)                                |
     And (Int, Int)                                     |
     Or (Int, Int)                                      |
