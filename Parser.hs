@@ -399,7 +399,7 @@ whileStmt = do
   whileLiteral <- whileToken
   expressionTokens <- manyTill anyToken (lookAhead colonToken) -- Armazena sintaticamente a condição
   colonLiteral <- colonToken
-  stmtsBlock <- manyTill anyToken (lookAhead endWhileToken) -- Armazena sintaticamente o bloco de stmts
+  stmtsBlock <- nestedWhileTokens 0 -- Armazena sintaticamente o bloco de stmts
   endWhileLiteral <- endWhileToken
   semiCol <- semiColonToken
 
@@ -444,6 +444,29 @@ whileStmt = do
 
   return ([whileLiteral] ++ expressionTokens ++ [colonLiteral] ++ stmtsBlock ++ [endWhileLiteral] ++ [semiCol])
 
+nestedWhileTokens :: Int -> ParsecT [Token] MemoryState IO [Token]
+nestedWhileTokens nestDepth = do
+  tokens <- manyTill anyToken (lookAhead endWhileToken <|> lookAhead whileToken)
+  -- liftIO (putStrLn $ "nestedTokens until:" ++ show tokens)
+  next <- lookAhead anyToken
+  -- liftIO (putStrLn $ "nestedTokens next:" ++ show next)
+  case next of
+    While _ -> do
+      whileToken' <- whileToken
+      nestedFor <- nestedWhileTokens (nestDepth + 1)
+      -- liftIO (putStrLn $ "nestedTokens recursed:" ++ show nestedFor)
+      -- endFor <- endForToken
+      -- liftIO (putStrLn $ "nestedTokens endFor:" ++ show endFor)
+      tokens' <- manyTill anyToken (lookAhead endWhileToken)
+      -- liftIO (putStrLn $ "nestedTokens tokens':" ++ show tokens')
+      return (tokens ++ [whileToken'] ++ nestedFor ++ tokens')
+    _ -> do
+      if nestDepth == 0 then do
+         return (tokens)
+      else do 
+        endWhile' <- endWhileToken
+        return (tokens ++ [endWhile'])
+
 ---- For
 forStmt :: ParsecT [Token] MemoryState IO [Token]
 forStmt = do
@@ -456,7 +479,8 @@ forStmt = do
   updateAssign <- manyTill anyToken (lookAhead rightParenthesisToken) -- Armazena sintaticamente a atualização de valor da iteração
   rightParenthesis <- rightParenthesisToken
   colon' <- colonToken
-  stmtsBlock <- manyTill anyToken (lookAhead endForToken) -- Armazena sintaticamente o bloco de stmts
+  stmtsBlock <- nestedForTokens 0
+  -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
   endFor <- endForToken
   semiCol <- semiColonToken
 
@@ -503,6 +527,29 @@ forStmt = do
   loop
 
   return ([forLiteral] ++ [colon'] ++ stmtsBlock ++ [endFor] ++ [semiCol])
+
+nestedForTokens :: Int -> ParsecT [Token] MemoryState IO [Token]
+nestedForTokens nestDepth = do
+  tokens <- manyTill anyToken (lookAhead endForToken <|> lookAhead forToken)
+  -- liftIO (putStrLn $ "nestedTokens until:" ++ show tokens)
+  next <- lookAhead anyToken
+  -- liftIO (putStrLn $ "nestedTokens next:" ++ show next)
+  case next of
+    For _ -> do
+      forToken' <- forToken
+      nestedFor <- nestedForTokens (nestDepth + 1)
+      -- liftIO (putStrLn $ "nestedTokens recursed:" ++ show nestedFor)
+      -- endFor <- endForToken
+      -- liftIO (putStrLn $ "nestedTokens endFor:" ++ show endFor)
+      tokens' <- manyTill anyToken (lookAhead endForToken)
+      -- liftIO (putStrLn $ "nestedTokens tokens':" ++ show tokens')
+      return (tokens ++ [forToken'] ++ nestedFor ++ tokens')
+    _ -> do
+      if nestDepth == 0 then do
+         return (tokens)
+      else do 
+        endFor' <- endForToken
+        return (tokens ++ [endFor'])
 
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
