@@ -24,17 +24,25 @@ getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
 getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 
 getDefaultValueDataTypes :: Token -> Token -> Token -> TypeValue
-getDefaultValueDataTypes (IntValue val _) (Type "list" (l, c)) varType = ListType (val, returnDefaultList val [] varType) (l, c)
+getDefaultValueDataTypes (IntValue val _) (Type "list" (l, c)) varType = ListType (val, returnDefaultList val [] varType) (l, c) 
 getDefaultValueDataTypes _ _ _ = error "Unexpected type for number of elements"
 
---getDefaultValueMatrixTypes :: (Token, Token) -> Token -> Token -> TypeValue
---getDefaultValueMatrixTypes (IntValue val _, IntValue val2 _) (Type "matrix" (l, c)) varType = MatrixType ((val, val2,) returnDefaultMatrix (val, val2) [[]] varType ) (l,c)
+getDefaultValueMatrix :: Token -> Token -> Token -> Token -> TypeValue
+getDefaultValueMatrix (IntValue row _) (IntValue col _) (Type "matrix" (l,c)) varType = MatrixType (row, col, returnDefaultMatrix row col [[]] varType) (l,c)
+getDefaultValueMatrix _ _ _ _ = error "Unexpected type for number of elements"
 
 returnDefaultList :: Int -> [TypeValue] -> Token -> [TypeValue]
 returnDefaultList 0 voidList _ = voidList
 returnDefaultList val voidList varType =
   let defaultValue = getDefaultValue varType
   in returnDefaultList (val - 1) (defaultValue : voidList) varType
+
+returnDefaultMatrix :: Int -> Int -> [[TypeValue]] -> Token -> [[TypeValue]]
+returnDefaultMatrix 0 _ _ _ = []
+returnDefaultMatrix rows cols voidList varType =
+  let defaultRow = returnDefaultList cols [] varType
+      remainingRows = returnDefaultMatrix (rows - 1) cols voidList varType
+  in defaultRow : remainingRows
 
 fromValuetoTypeValue :: Token -> TypeValue
 fromValuetoTypeValue (IntValue value pos) = IntType value pos

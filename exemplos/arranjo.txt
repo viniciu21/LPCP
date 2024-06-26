@@ -1,7 +1,6 @@
 declaration: 
     a: int;
     mat[5][5]: int;
-    lista[5]: int;
 end_declaration  
 
 

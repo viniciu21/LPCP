@@ -129,23 +129,23 @@ listDeclStmt = do
 
 matrixDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 matrixDeclStmt = do
-  id <- idToken
+  id@(Id name pos) <- idToken
   leftBrack1 <- leftBracketToken
-  valList1 <- intValToken
+  rows@(IntValue rowsVal (row,col)) <- intValToken
   rightBrack1 <- rightBracketToken
   leftBrack2 <-leftBracketToken
-  valList2 <- intValToken
+  cols@(IntValue colsVal _) <- intValToken
   rightBrack2 <- rightBracketToken
   colon <- colonToken
   varType <- typeToken
   semiCol <- semiColonToken
   state <- getState
 
-  --let matrixType = getDefaultValueDataTypes valList (Type "list" pos) varType
+  let defaultMatrix = getDefaultValueMatrix rows cols (Type "matrix" pos) varType
 
   -- A declaração só ocorre quando a flag estiver ativa
   if isFlagTrue state then do
-    updateState (symtableInsert (id, getDefaultValue varType)) -- primeiro argumento de getDefaultValue não é usado
+    updateState (symtableInsert (id, defaultMatrix)) -- primeiro argumento de getDefaultValue não é usado
     updatedState <- getState
     liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
   else

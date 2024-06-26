@@ -90,7 +90,7 @@ data TypeValue =
     CharType Char (Int, Int) |
     BoolType Bool (Int, Int) |
     ListType (Int, [TypeValue]) (Int, Int)| -- Tamanho, lista de valores, posição
-    MatrixType (Int, Int, [TypeValue]) (Int, Int)|
+    MatrixType (Int, Int, [[TypeValue]]) (Int, Int)|
     StructType [(String, TypeValue)] (Int, Int) 
     deriving (Eq)
 
@@ -101,7 +101,6 @@ instance Show TypeValue where
     show (CharType val pos) = show val
     show (BoolType val pos) = show val
     show (ListType (len, val) pos) = show (len, val)
-    --show (MatrixType (l, c, val) pos) = show((l,c) val)
     
 data Token = 
     Id String (Int, Int)                               |
