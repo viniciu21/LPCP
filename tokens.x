@@ -101,6 +101,7 @@ instance Show TypeValue where
     show (CharType val pos) = show val
     show (BoolType val pos) = show val
     show (ListType (len, val) pos) = show (len, val)
+    show (MatrixType (l, c, val) pos) = "MatrixType (" ++ show l ++ ", " ++ show c ++ ", " ++ show val ++ ")"
     
 data Token = 
     Id String (Int, Int)                               |
