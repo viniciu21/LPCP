@@ -288,36 +288,80 @@ ifStmt = do
   colonLiteral <- colonToken
   state <- getState
   -- Verifica expressão do if
-  let result = evaluateCondition expression
-  if result
+  if isFlagTrue state 
     then do
-      -- Entrou no IF
-      stmtsBlock <- stmts
-      skip' <- manyTill anyToken (lookAhead endifToken)
-      -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
-      endIfLiteral <- endifToken
-      semiCol1 <- semiColonToken
-      return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
-    else do
-      skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
-      -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
-      elifStmt' <- elifStmt
-      if null elifStmt'
-        then do
-          -- Entrou no else
-          skip' <- manyTill anyToken (lookAhead elseToken)
-          -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
-          elseStmt' <- elseStmt
-          endIfLiteral <- endifToken
-          semiCol <- semiColonToken
-          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
-        else do
-          -- Entrou no elif
-          skip' <- manyTill anyToken (lookAhead endifToken)
-          -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
-          endIfLiteral <- endifToken
-          semiCol <- semiColonToken
-          return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
+      if isFuncFlagTrue state then do
+        let nLocalVar = getLocalSymtableLength state
+        let result = evaluateCondition expression
+        if result
+          then do
+            -- Entrou no IF
+            stmtsBlock <- stmts
+            skip' <- manyTill anyToken (lookAhead endifToken)
+            -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
+            endIfLiteral <- endifToken
+            semiCol1 <- semiColonToken
+            updateState (removeLocalSymtableUntilLenght nLocalVar) 
+            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
+          else do
+            skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
+            -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
+            elifStmt' <- elifStmt
+            if null elifStmt'
+              then do
+                -- Entrou no else
+                skip' <- manyTill anyToken (lookAhead elseToken)
+                -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
+                elseStmt' <- elseStmt
+                endIfLiteral <- endifToken
+                semiCol <- semiColonToken
+                updateState (removeLocalSymtableUntilLenght nLocalVar) 
+                return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
+              else do
+                -- Entrou no elif
+                skip' <- manyTill anyToken (lookAhead endifToken)
+                -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
+                endIfLiteral <- endifToken
+                semiCol <- semiColonToken
+                updateState (removeLocalSymtableUntilLenght nLocalVar) 
+                return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
+      else do
+        let nVar = getSymtableLenght state
+        let result = evaluateCondition expression
+        if result
+          then do
+            -- Entrou no IF
+            stmtsBlock <- stmts
+            skip' <- manyTill anyToken (lookAhead endifToken)
+            -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
+            endIfLiteral <- endifToken
+            semiCol1 <- semiColonToken
+            updateState (symtableRemoveUntilLenght nVar) 
+            return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
+          else do
+            skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead elseToken)
+            -- liftIO (putStrLn $ "Tokens pulados antes de elif <|> else:" ++ show skip')
+            elifStmt' <- elifStmt
+            if null elifStmt'
+              then do
+                -- Entrou no else
+                skip' <- manyTill anyToken (lookAhead elseToken)
+                -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
+                elseStmt' <- elseStmt
+                endIfLiteral <- endifToken
+                semiCol <- semiColonToken
+                updateState (symtableRemoveUntilLenght nVar) 
+                return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elseStmt')
+              else do
+                -- Entrou no elif
+                skip' <- manyTill anyToken (lookAhead endifToken)
+                -- liftIO (putStrLn $ "Tokens pulados após elif:" ++ show skip')
+                endIfLiteral <- endifToken
+                semiCol <- semiColonToken
+                updateState (symtableRemoveUntilLenght nVar) 
+                return ([ifLiteral] ++ [expression] ++ [colonLiteral] ++ elifStmt')
+  else
+    return []
 
 elifStmt :: ParsecT [Token] MemoryState IO [Token]
 elifStmt =
@@ -365,16 +409,36 @@ whileStmt = do
 
   let loop = do
         memoryState <- getState
-        -- Consome e avalia a condição
-        setInput expressionTokens
-        expressionValue <- ifParenthesisExpression
-        let condition = evaluateCondition expressionValue
-        if condition
-          then do
-            setInput stmtsBlock
-            _ <- many stmts
-            loop
-          else setInput input
+        if isFlagTrue memoryState then do
+          if isFuncFlagTrue memoryState then do
+            let nLocalVar = getLocalSymtableLength memoryState
+            -- Consome e avalia a condição
+            setInput expressionTokens
+            expressionValue <- ifParenthesisExpression
+            let condition = evaluateCondition expressionValue
+            if condition
+              then do
+                setInput stmtsBlock
+                _ <- many stmts
+                -- Remove as novas variáveis do bloco
+                updateState (removeLocalSymtableUntilLenght nLocalVar) 
+                loop
+              else setInput input
+          else do
+            let nVar = getSymtableLenght memoryState
+            -- Consome e avalia a condição
+            setInput expressionTokens
+            expressionValue <- ifParenthesisExpression
+            let condition = evaluateCondition expressionValue
+            if condition
+              then do
+                setInput stmtsBlock
+                _ <- many stmts
+                -- Remove as novas variáveis do bloco
+                updateState (symtableRemoveUntilLenght nVar)
+                loop
+              else setInput input
+        else setInput input
 
   loop
 
@@ -402,19 +466,39 @@ forStmt = do
 
   let loop = do
         memoryState <- getState
-        -- Consome e avalia a condição
-        setInput expressionTokens
-        expressionValue <- relatOrLogicExpression
-        let condition = evaluateCondition expressionValue
-        if condition
-          then do
-            -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
-            setInput stmtsBlock
-            _ <- many stmts
-            setInput updateAssign
-            assign'' <- assign
-            loop
-          else setInput input
+        if isFlagTrue memoryState then do
+          if isFuncFlagTrue memoryState then do
+            let nLocalVar = getLocalSymtableLength memoryState
+            setInput expressionTokens
+            expressionValue <- relatOrLogicExpression
+            let condition = evaluateCondition expressionValue
+            if condition
+              then do
+                -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
+                setInput stmtsBlock
+                _ <- many stmts
+                setInput updateAssign
+                assign'' <- assign
+                updateState (removeLocalSymtableUntilLenght nLocalVar) 
+                loop
+              else setInput input
+          else do
+            let nVar = getSymtableLenght memoryState
+            -- Consome e avalia a condição
+            setInput expressionTokens
+            expressionValue <- relatOrLogicExpression
+            let condition = evaluateCondition expressionValue
+            if condition
+              then do
+                -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
+                setInput stmtsBlock
+                _ <- many stmts
+                setInput updateAssign
+                assign'' <- assign
+                updateState (symtableRemoveUntilLenght nVar)
+                loop
+              else setInput input
+        else setInput input
 
   loop
 

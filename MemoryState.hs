@@ -47,6 +47,11 @@ symtableGet (Id idStr1 pos1) (_, (Id idStr2 pos2, value2) : listTail, _, _, _, _
     else symtableGet (Id idStr1 pos1) (False, listTail, [], [], [], False, False)
 symtableGet _ _ = Nothing
 
+{-
+  Retorna o número de variáveis presente na tabela de símbolos
+-}
+getSymtableLenght :: MemoryState -> Int
+getSymtableLenght (_, symtable, _, _, _, _, _) = length symtable
 
 {-
   SymtableInsert recebe uma tupla (Token ID, Token TypeValue) e armazena na tabela de simbolos se ela ainda não existir
@@ -80,6 +85,13 @@ symtableRemove (id1, v1) (flag, (id2, v2) : listTail, funcs, structs, callstack,
       let (flag', updatedSymtable, funcs', structs', callstack', structflag', funcFlag') = symtableRemove (id1, v1) (flag, listTail, funcs, structs, callstack, structflag, funcFlag)
        in (flag', (id2, v2) : updatedSymtable, funcs', structs', callstack', structflag', funcFlag')
 
+-- Removes global variables from the top until the desired length is reached
+symtableRemoveUntilLenght :: Int -> MemoryState -> MemoryState
+symtableRemoveUntilLenght desiredLength (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
+  let updatedSymtable = take desiredLength symtable  -- Take only the first `desiredLength` variables
+  in (flag, updatedSymtable, funcs, structs, callstack, structflag, funcFlag)
+
+
 ----------------------------- Tabela de Funções -----------------------------
 
 {-
@@ -105,24 +117,41 @@ updateParametersNames newNames oldParams = zip newNames (map snd oldParams)
 
 ----------------------------- Pilha de ativação -----------------------------
 
+{-
+  Pega a última função instanciada na pilha de ativação
+-}
 callStackGet :: MemoryState -> (Token, [(Token, TypeValue)], [Token])
 callStackGet (_, _, _, _, [], _, _) = error "call stack is empty"
 callStackGet (_, _, _, _, callstack, _, _) = last callstack
 
+{-
+  Adiciona uma nova instância de uma função no topo da pilha de ativação.
+  Recebe a nova instância no primeiro parâmetro, e a memória no segundo.
+-}
 callStackPush :: (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
 callStackPush newCallstackFunc (flag, symtable, funcs, structs, callstack, structflag, funcFlag) = (flag, symtable, funcs, structs, callstack ++ [newCallstackFunc], structflag, funcFlag)
 
+{-
+  Remove a instância de função que estiver no topo da pilha de ativação.
+  Recebee a memória como primeiro parâmetro.
+-}
 callStackPop :: MemoryState -> MemoryState
 callStackPop (_, _, _, _, [], _, _) = error "call stack is empty"
 callStackPop (flag, symtable, funcs, structs, callstack, structflag, funcFlag) =
   (flag, symtable, funcs, structs, init callstack, structflag, funcFlag)
 
+{-
+  Atualiza os dados da função que estiver no topo da pilha de ativação
+-}
 callStackUpdateTop :: (Token, [(Token, TypeValue)], [Token]) -> MemoryState -> MemoryState
 callStackUpdateTop newFunc (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
   if null callStack
     then error "call stack is empty"
     else (flag, symTable, funcs, structs, init callStack ++ [newFunc], structFlag, funcFlag)
 
+{-
+  Retorna um booleano indicando se a pilha de ativação está vazia
+-}
 isCallStackEmpty :: MemoryState -> Bool
 isCallStackEmpty (flag, symTable, funcs, structs, callStack, structFlag, funcFlag) =
   null callStack
@@ -159,6 +188,14 @@ updateLocalSymtable varId@(Id name1 pos1) newValue memoryState =
       | name2 == name1 = (oldVarId, newValue) : rest
       | otherwise = (oldVarId, oldValue) : updateVar rest
 
+-- Removes local variables from the top until the desired length is reached
+removeLocalSymtableUntilLenght :: Int -> MemoryState -> MemoryState
+removeLocalSymtableUntilLenght desiredLength memoryState =
+  let (funcId, locals, stmts) = callStackGet memoryState
+      updatedLocals = take desiredLength locals  -- Take only the first `desiredLength` variables
+      updatedFunc = (funcId, updatedLocals, stmts)
+  in callStackUpdateTop updatedFunc memoryState
+
 {-
   Recebe um Token ID e verifica se ele existe no escopo local da função do topo da pilha de ativação. Se existir, retorna o seu TypeValue
 -}
@@ -173,7 +210,10 @@ getLocalSymtable varId@(Id name1 _) memoryState =
       | name1 == name2 = Just localVarType
       | otherwise = findVarType rest
 
-
+getLocalSymtableLength :: MemoryState -> Int
+getLocalSymtableLength memoryState = 
+  let (funcId, locals, stmts) = callStackGet memoryState
+  in length locals
 
 ----------------------------- Structs -----------------------------
 -- insertStruct :: Token -> [Token] -> MemoryState -> MemoryState
