@@ -85,8 +85,8 @@ declStmt :: ParsecT [Token] MemoryState IO ([Token])
 declStmt =
   try
     varDeclStmt
-    <|> listDeclStmt
-    <|> matrixDeclStmt 
+    <|> try matrixDeclStmt 
+    <|> try listDeclStmt
     -- typeDeclStmt
 
 varDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
@@ -129,7 +129,7 @@ listDeclStmt = do
 
 matrixDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
 matrixDeclStmt = do
-  id@(Id name pos) <- idToken
+  id <- idToken
   leftBrack1 <- leftBracketToken
   valList1 <- intValToken
   rightBrack1 <- rightBracketToken
