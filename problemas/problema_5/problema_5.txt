@@ -19,15 +19,18 @@ func mdc(n, m, r):
     elif(m > n):
         mdc(n, m%n, r);
         return r;
+    else:
+        mdc(m, n%m, r);
+        return r;
     end_if;
     return r;
 end_func
 
 main:
-    a = 20;
-    b = 10;
+    a = scan("Primeiro Valor: ");
+    b = scan("Segundo Valor: ");
     mdc(a, b, c);
-    print(a);
-    print(b);
+    #print(a);
+    #print(b);
     print(c);
 end_main

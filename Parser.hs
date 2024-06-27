@@ -441,6 +441,7 @@ ifStmt = do
           if result
             then do
               -- Entrou no IF
+              -- liftIO (putStrLn $ "Entrei no if")
               stmtsBlock <- stmts
               skip' <- manyTill anyToken (lookAhead endifToken)
               -- liftIO (putStrLn $ "Tokens pulados depois do if:" ++ show skip')
@@ -455,8 +456,10 @@ ifStmt = do
               if null elifStmt'
                 then do
                   -- Entrou no else
+                  -- liftIO (putStrLn $ "Entrei no else")
+                  -- input <- getInput
+                  -- liftIO (putStrLn $ "input:" ++ show input)
                   skip' <- manyTill anyToken (lookAhead elseToken <|> lookAhead endifToken)
-                  -- liftIO (putStrLn $ "Tokens pulados antes de else:" ++ show skip')
                   elseStmt' <- elseStmt
                   endIfLiteral <- endifToken
                   semiCol <- semiColonToken
@@ -476,6 +479,7 @@ ifStmt = do
 elifStmt :: ParsecT [Token] MemoryState IO [Token]
 elifStmt =
   ( do
+      -- liftIO (putStrLn $ "Entrei no elif")
       elifLiteral <- elifToken
       expression <- ifParenthesisExpression
       colonLiteral <- colonToken
@@ -483,12 +487,15 @@ elifStmt =
       let result = evaluateCondition expression
       if result
         then do
+          -- liftIO (putStrLn $ "Entrei no elif result")
           stmtsBlock <- stmts
           return ([elifLiteral] ++ [expression] ++ [colonLiteral] ++ stmtsBlock)
         else do
-          skip' <- manyTill anyToken (lookAhead elifToken)
+          -- liftIO (putStrLn $ "Entrei no elif not result")
+          skip' <- manyTill anyToken (lookAhead elifToken <|> lookAhead endifToken)
           -- liftIO (putStrLn $ "Tokens pulados antes de elif seguido:" ++ show skip')
           elifStmt' <- elifStmt
+          -- liftIO (putStrLn $ "elifStmt':" ++ show elifStmt')
           return elifStmt'
   )
     <|> return []
@@ -595,6 +602,7 @@ forStmt = do
   colon' <- colonToken
   -- liftIO (putStrLn $ "forStmt before Stmts Block" ++ show forLiteral)
   stmtsBlock <- nestedForTokens 0
+  -- liftIO (putStrLn $ "forStmt after Stmts Block" ++ show forLiteral ++ show stmtsBlock)
   endFor <- endForToken
   semiCol <- semiColonToken
 
@@ -654,6 +662,7 @@ nestedForTokens nestDepth = do
     For _ -> do
       forToken' <- forToken
       nestedFor <- nestedForTokens (nestDepth + 1)
+      next <- lookAhead anyToken
       -- liftIO (putStrLn $ "nestedTokens recursed:" ++ show nestedFor)
       -- endFor <- endForToken
       -- liftIO (putStrLn $ "nestedTokens endFor:" ++ show endFor)
@@ -732,6 +741,7 @@ assignMatrix = do
   rightBrack2 <- rightBracketToken
   assignSym <- assignToken
   value <- assignVal id
+  -- liftIO (putStrLn $ "assignMatrix: " ++ show value)
   state <- getState
 
   updateState (assignMatrixValue id rows cols value)
@@ -880,7 +890,7 @@ arithmeticExpression =
   do
     -- liftIO (putStrLn $ "Entrei em arithmeticExpression")
     try plusMinusExpression
-    <|> term
+    <|> try term
 
 -- + | -
 plusMinusExpression :: ParsecT [Token] MemoryState IO Token
@@ -1023,9 +1033,8 @@ valueLiteralExpression = do
 
 term :: ParsecT [Token] MemoryState IO Token
 term =
-  try
-    termExpression
-    <|> factor
+  try termExpression
+    <|> try factor
 
 termExpression :: ParsecT [Token] MemoryState IO Token
 termExpression = do
@@ -1054,9 +1063,8 @@ termOperatorLiteral =
 
 factor :: ParsecT [Token] MemoryState IO Token
 factor =
-  try
-    factorExpression
-    <|> exponential
+  try factorExpression
+    <|> try exponential
 
 factorExpression :: ParsecT [Token] MemoryState IO Token
 factorExpression = do
