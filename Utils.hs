@@ -161,7 +161,6 @@ binaryEval (BoolValue x p) (Or _) (BoolValue y _) = BoolValue (x || y) p
 --     -- Add more type cases as needed
 --     addTypeValues _ _ = error "Unsupported matrix element types for addition"
 
-
 {-
   Realiza a operação unária requisitada. Recebendo 2 parâmetros:
   param2: Token de Operação
@@ -204,7 +203,8 @@ getTypeStr (FloatValue _ _) = "float"
 getTypeStr (BoolValue _ _) = "bool"
 getTypeStr (StringValue _ _) = "string"
 getTypeStr (CharValue _ _) = "char"
-getTypeStr _ = error "deu ruim"
+getTypeStr (MatrixValue _ _) = "matrix"
+getTypeStr _ = error "Couldn't parse type to value"
 
 printTypeValue :: Token -> IO String
 printTypeValue (IntValue b _) = do
@@ -349,8 +349,8 @@ findFunction funcId@(Id name1 pos1) ((fid@(Id name2 pos2), params, stmts) : func
 ------------------------------------------------------
 
 readValue :: Token -> ParsecT [Token] MemoryState IO Token
-readValue (Id idStr position) = do
-  -- liftIO (putStrLn $ "Estou na função readValue com o Id: " ++ show idStr)
+readValue id@(Id idStr position) = do
+  -- liftIO (putStrLn $ "Estou na função readValue com o Id: " ++ show id)
   state <- getState
   let typeStr = getTypeStr (getType (Id idStr position) state)
   inputTerminal <- liftIO getLine
@@ -362,7 +362,21 @@ readValue (Id idStr position) = do
     "char" ->
       if length inputTerminal == 1
         then return $ CharValue (head inputTerminal) position
-        else fail "Input for char must be a single character"
+        else error "Input for char must be a single character"
+    "matrix" -> do
+      case symtableGet id state of
+        Just val -> do
+          case getTypeStr (fromTypeValuetoValue (getMatrixTypeHead val)) of
+            "int" -> return $ IntValue (read inputTerminal) position
+            "float" -> return $ FloatValue (read inputTerminal) position
+            "bool" -> return $ BoolValue (read inputTerminal == "true") position
+            "string" -> return $ StringValue inputTerminal position
+            "char" ->
+              if length inputTerminal == 1
+                then return $ CharValue (head inputTerminal) position
+                else error "Input for char must be a single character"
+            _ -> error "Unsupported type"
+        Nothing -> error "Unsupported type"
     _ -> error "Unsupported type"
 
 printMemoryState :: MemoryState -> IO ()
@@ -413,6 +427,10 @@ updateMatrix matrix row col newVal =
 -}
 getMatrixElement :: TypeValue -> Token -> Token -> TypeValue
 getMatrixElement matrix@(MatrixType (l, c, elements) pos) (IntValue row _) (IntValue col _) = (elements !! row) !! col
+
+getMatrixTypeHead :: TypeValue -> TypeValue
+getMatrixTypeHead matrix@(MatrixType (l, c, elements) pos) = head (head elements)
+getMatrixTypeHead _ = error "Tying to parse a type that isn't a matrix type"
 
 assignMatrixValue :: Token -> Token -> Token -> Token -> MemoryState -> MemoryState
 assignMatrixValue id (IntValue row _) (IntValue col _) newValue state =

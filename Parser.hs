@@ -141,9 +141,11 @@ listDeclStmt = do
     then do
       updateState (symtableInsert (id, listType)) -- primeiro argumento de getDefaultValue não é usado
       updatedState <- getState
-      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
-    else
-      liftIO (putStrLn "Flag is false, skipping variable declaration")
+      -- liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+    else do
+      liftIO (putStrLn $ "Flag is false, skipping variable declaration")
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 matrixDeclStmt :: ParsecT [Token] MemoryState IO ([Token])
@@ -167,9 +169,11 @@ matrixDeclStmt = do
     then do
       updateState (symtableInsert (id, defaultMatrix)) -- primeiro argumento de getDefaultValue não é usado
       updatedState <- getState
-      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
-    else
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+    -- liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+    else do
       liftIO (putStrLn "Flag is false, skipping variable declaration")
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 funcDeclStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -320,9 +324,11 @@ matrixStmt = do
     then do
       updateState (symtableInsert (id, defaultMatrix)) -- primeiro argumento de getDefaultValue não é usado
       updatedState <- getState
-      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
-    else
+      -- liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
+    else do
       liftIO (putStrLn "Flag is false, skipping variable declaration")
+      return ([id] ++ [colon] ++ [varType] ++ [semiCol])
   return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 listStmt :: ParsecT [Token] MemoryState IO ([Token])
@@ -579,15 +585,16 @@ forStmt :: ParsecT [Token] MemoryState IO [Token]
 forStmt = do
   forLiteral <- forToken
   leftParenthesis <- leftParenthesisToken
-  assign' <- assignToken
+  assign' <- assignVar
+  -- liftIO (putStrLn $ "forStmt forLiteral" ++ show forLiteral ++ show leftParenthesis ++ show assign')
   semiCol' <- semiColonToken
   expressionTokens <- manyTill anyToken (lookAhead semiColonToken) -- Armazena sintaticamente a condição
   semiCol'' <- semiColonToken
   updateAssign <- manyTill anyToken (lookAhead rightParenthesisToken) -- Armazena sintaticamente a atualização de valor da iteração
   rightParenthesis <- rightParenthesisToken
   colon' <- colonToken
+  -- liftIO (putStrLn $ "forStmt before Stmts Block" ++ show forLiteral)
   stmtsBlock <- nestedForTokens 0
-  -- liftIO (putStrLn $ "forStmt Stmts Block" ++ show stmtsBlock)
   endFor <- endForToken
   semiCol <- semiColonToken
 
@@ -729,18 +736,17 @@ assignMatrix = do
 
   updateState (assignMatrixValue id rows cols value)
 
-  newstate <- getState
+  -- newstate <- getState
 
-  liftIO $ printMemoryState newstate
+  -- liftIO $ printMemoryState newstate
 
   return (id : assignSym : [value])
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
-  try
-    assignValExpression
-    <|> valueLiteralExpression
-    <|> scanfExpression idScan
+  try assignValExpression
+    <|> try valueLiteralExpression
+    <|> try (scanfExpression idScan)
 
 -- Chamada de função
 funcStmt :: ParsecT [Token] MemoryState IO [Token]
@@ -985,7 +991,7 @@ ifParenthesisExpression = do
 idTokenExpression :: ParsecT [Token] MemoryState IO Token
 idTokenExpression = do
   idToken' <- idToken
-  liftIO $ liftIO (putStrLn $ "Entrei no idToken: " ++ show idToken')
+  -- liftIO $ liftIO (putStrLn $ "Entrei no idToken: " ++ show idToken')
   -- liftIO $ liftIO (putStrLn $ "State no idToken: ")
   -- state <- getState
   -- liftIO $ printMemoryState state
@@ -994,7 +1000,7 @@ idTokenExpression = do
   if isFuncFlagTrue symtable
     then case getLocalSymtable idToken' symtable of
       Just idVal -> return (fromTypeValuetoValue idVal)
-      Nothing -> fail "Variable not found in local symtable"
+      Nothing -> error "Variable not found in local symtable"
     else case symtableGet idToken' symtable of
       Just val -> do
         let check = checkTypeValue val
@@ -1009,7 +1015,7 @@ idTokenExpression = do
             return (fromTypeValuetoValue (getMatrixElement val line col))
           else
             return (fromTypeValuetoValue val)
-      Nothing -> fail "Variable not found"
+      Nothing -> error "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token
 valueLiteralExpression = do
@@ -1078,6 +1084,7 @@ exponential =
 scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
 scanfExpression idScan = do
   scanTok <- scanToken
+  -- liftIO (putStrLn $ "scanfExpression scanTok: " ++ show scanTok)
   lParenthesisLiteral <- leftParenthesisToken
   scanString <- stringValToken
   rParenthesisLiteral <- rightParenthesisToken

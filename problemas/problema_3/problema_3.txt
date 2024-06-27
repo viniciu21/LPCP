@@ -8,27 +8,26 @@ declaration:
 end_declaration
 
 main: 
-    linhas_um = scan("Qual o número de linhas da matriz um?");
-    colunas_um = scan("Qual o número de colunas da matriz um?"); 
-
+    linhas_um = scan("Qual o numero de linhas da matriz um?");
+    colunas_um = scan("Qual o numero de colunas da matriz um?"); 
     matriz_um[linhas_um][colunas_um]: int;
 
     print("Digite aqui os valores da matriz um: ");
     for(i = 0; i < linhas_um; i = i + 1): 
         for(j = 0; j < colunas_um; j = j + 1):
-            matriz_um[i][j] = scan(""); 
+            matriz_um[i][j] = scan("Digite: "); 
         end_for;
     end_for;
 
-    linhas_dois = scan("Qual o número de linhas da matriz dois?");
-    colunas_dois = scan("Qual o número de colunas da matriz dois?"); 
+    linhas_dois = scan("Qual o numero de linhas da matriz dois?");
+    colunas_dois = scan("Qual o numero de colunas da matriz dois?"); 
 
     matriz_dois[linhas_dois][colunas_dois]: int;
 
     print("Digite aqui os valores da matriz dois: ");
     for(i = 0; i < linhas_dois; i = i + 1):
         for(j = 0; j < colunas_dois; j = j + 1):
-            matriz_um[i][j] = scan(""); 
+            matriz_dois[i][j] = scan("Digite: "); 
         end_for;
     end_for;
 
@@ -46,36 +45,31 @@ main:
     # Multiplicação de matrizes
     resultado_mult[linhas_dois][colunas_um]: int;
     if(colunas_um != linhas_dois):
-        print("Não é possível multiplicar essas matrizes \n"); 
+        print("Nao e possivel multiplicar essas matrizes"); 
     else:
-        for(i = 0; i < linha_dois; i = i + 1) : 
+        for(i = 0; i < linhas_dois; i = i + 1): 
             for(j = 0; j < colunas_um; j = j + 1): 
                 resultado_mult[i][j] = matriz_um[i][j] * matriz_dois[j][i];
             end_for;
         end_for;
-        return resultado; 
     end_if;
 
     # Print Matriz soma
     for(i = 0; i < linhas_um; i = i + 1):
         for(j = 0; j < colunas_um; j = j +1):
             print(resultado_soma[i][j]);
-            print(" ");
         end_for;
-        print("/n");
     end_for;
 
     # Print Matriz Multiplicação
     if(colunas_um != linhas_dois):
-        print("Não é possível multiplicar essas matrizes \n"); 
+        print("Não é possível multiplicar essas matrizes"); 
     else:
-        for(i = 0; i < linha_dois; i = i + 1) : 
+        for(i = 0; i < linhas_dois; i = i + 1) : 
             for(j = 0; j < colunas_um; j = j + 1): 
                 print(resultado_mult[i][j]);
-                print(" ");
             end_for;
         end_for;
-        return resultado; 
     end_if;
 
 end_main

@@ -79,7 +79,7 @@ tokens :-
     "print"                                   { \p s -> Print s (getLC p) }
     $digit+ \. $digit+                        { \p s -> FloatValue (read s) (getLC p) }
     $digit+                                   { \p s -> IntValue (read s) (getLC p) }
-    \" [$white $alpha $digit ! : \_ \']* \"     { \p s -> StringValue (cleanString s) (getLC p) }
+    \" [.]* \"     { \p s -> StringValue (cleanString s) (getLC p) }
     \' $printable \'                          { \p s -> CharValue (cleanChar s) (getLC p) } 
     $alpha [$alpha $digit \_ \']*             { \p s -> Id s (getLC p) }
 
