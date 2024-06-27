@@ -8,7 +8,7 @@ module Main (main) where
 import Control.Arrow (ArrowChoice (right))
 import Control.Monad (when)
 import Control.Monad.IO.Class
-import Control.Monad.State (modify)
+import Control.Monad.State (modify, MonadTrans (lift))
 import Debug.Trace (trace)
 import LiteralTokens
 import MemoryState
@@ -686,7 +686,35 @@ assignList = do
   state <- getState
 
   return (id : assignSym : [value])
-        
+
+assignMatrixToOtherMatrix :: ParsecT [Token] MemoryState IO [Token]
+assignMatrixToOtherMatrix = do
+  id <- idToken
+  leftBrack1 <- leftBracketToken
+  rows <- exponential
+  rightBrack1 <- rightBracketToken
+  leftBrack2 <- leftBracketToken
+  cols <- exponential
+  rightBrack2 <- rightBracketToken
+  assignSym <- assignToken
+  idAssign <- idToken
+  leftBrack3 <- leftBracketToken
+  rows1 <- exponential
+  rightBrack3 <- rightBracketToken
+  leftBrack4 <- leftBracketToken
+  cols1 <- exponential
+  rightBrack4 <- rightBracketToken
+  state <- getState
+
+
+  updateState (assignMatrixValueTypeValue id rows cols idToken rows1 cols1 state)  
+
+  newstate <- getState
+
+  liftIO $ printMemoryState newstate
+
+  return (id : assignSym : [])
+
 
 assignMatrix :: ParsecT [Token] MemoryState IO [Token]
 assignMatrix = do
@@ -701,7 +729,7 @@ assignMatrix = do
   value <- assignVal id
   state <- getState
 
-  updateState(assignMatrixValue id rows cols value)
+  updateState (assignMatrixValue id rows cols value)
 
   newstate <- getState
 
@@ -967,12 +995,18 @@ idTokenExpression = do
   -- liftIO $ printMemoryState state
   -- liftIO $ print $ show idToken'
   symtable <- getState
+
+  let valor =  getLocalSymtable idToken' symtable
+  --liftIO $ print valor
+
   if isFuncFlagTrue symtable
     then case getLocalSymtable idToken' symtable of
-      Just idVal -> return (fromTypeValuetoValue idVal)
+      Just idVal -> 
+        return (fromTypeValuetoValue idVal)
       Nothing -> fail "Variable not found in local symtable"
     else case symtableGet idToken' symtable of
-      Just val -> return (fromTypeValuetoValue val)
+      Just val -> 
+        return (fromTypeValuetoValue val)
       Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token

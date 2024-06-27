@@ -395,3 +395,44 @@ assignMatrixValue id (IntValue row _) (IntValue col _) newValue state =
             updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
         in updatedState
     Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
+
+assignMatrixValueWithTypeValue :: Token -> Token -> Token -> TypeValue -> MemoryState -> MemoryState
+assignMatrixValueWithTypeValue id (IntValue row _) (IntValue col _) newValue state =
+  case symtableGet id state of
+    Nothing -> error $ "Variable does not exist: " ++ show id 
+    Just (MatrixType (linha, coluna, matrix) pos) -> 
+      if row > linha - 1 || col > coluna - 1 then 
+        error $ "Out of bounds " ++ show id 
+      else
+        let updatedMatrix = updateMatrix matrix row col newValue
+            updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
+        in updatedState
+    Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
+
+
+assignMatrixValueTypeValue :: Token -> Token -> Token -> Token -> Token -> Token -> MemoryState -> MemoryState -> MemoryState
+assignMatrixValueTypeValue id (IntValue row _) (IntValue col _) id2 (IntValue row2 _) (IntValue col2 _) state =
+  case symtableGet id state of
+    Nothing -> error $ "Variable does not exist: " ++ show id 
+    Just (MatrixType (linha, coluna, matrix) pos) ->
+      case symtableGet id2 state of
+        Nothing -> error $ "Variable does not exist: " ++ show id 
+        Just (MatrixType (linha2, coluna2, matrix2) pos2) ->
+          if (row > linha - 1 || col > coluna - 1) && (row2 > linha2 - 1 || col2 > coluna2 - 1) then 
+            error $ "Out of bounds " ++ show id 
+          else
+            let updatedMatrix = updateMatrix matrix row col (fromValuetoTypeValue (getElement matrix2 row2 col2))
+                updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
+            in updatedState
+        Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
+    Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
+
+
+
+isMatrixType :: TypeValue -> Bool
+isMatrixType (MatrixType _ _) = True
+isMatrixType _                = False
+
+-- Função para acessar um elemento específico da matriz
+getElement :: [[TypeValue]] -> Int -> Int -> TypeValue
+getElement matrix row col = (matrix !! row) !! col
