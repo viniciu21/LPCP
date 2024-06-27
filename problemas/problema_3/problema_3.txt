@@ -43,18 +43,23 @@ main:
     end_if;
 
     # Multiplicação de matrizes
-    resultado_mult[linhas_dois][colunas_um]: int;
+    resultado_mult[linhas_um][colunas_dois]: int;
     if(colunas_um != linhas_dois):
         print("Nao e possivel multiplicar essas matrizes"); 
     else:
-        for(i = 0; i < linhas_dois; i = i + 1): 
-            for(j = 0; j < colunas_um; j = j + 1): 
-                resultado_mult[i][j] = matriz_um[i][j] * matriz_dois[j][i];
+        for(i = 0; i < linhas_um; i = i + 1): 
+            for(j = 0; j < colunas_dois; j = j + 1): 
+                k: int;
+                resultado_mult[i][j] = 0;
+                for (k = 0; k < colunas_um; k = k + 1):
+                    resultado_mult[i][j] = resultado_mult[i][j] + matriz_um[i][k] * matriz_dois[k][j];
+                end_for;
             end_for;
         end_for;
     end_if;
 
     # Print Matriz soma
+    print("Matriz resultado soma: ");
     for(i = 0; i < linhas_um; i = i + 1):
         for(j = 0; j < colunas_um; j = j +1):
             print(resultado_soma[i][j]);
@@ -62,6 +67,7 @@ main:
     end_for;
 
     # Print Matriz Multiplicação
+    print("Matriz resultado multiplicação: ");
     if(colunas_um != linhas_dois):
         print("Não é possível multiplicar essas matrizes"); 
     else:

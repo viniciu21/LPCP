@@ -1,16 +1,22 @@
 declaration:
     problem_1: float;
-    a: float;
-    b: int;
+    #a: float;
+    #b: int;
     c: float;
-    d: int;
+    #d: int;
+    x: float;
+    y: float;
+    c: int;
 end_declaration
 
 main:
-    a = 10.1;
-    b = 2;
-    c = 5.5;
-    d = 5;
-    problem_1 = a ** b - c + d; # 101.51
+    #a = 10.1;
+    #b = 2;
+    #c = 5.5;
+    #d = 5;
+    x = 0.0;
+    y = 0.0;
+    c = 5;
+    problem_1 = x ** 2 - y + c; # 101.51
     print(problem_1);
 end_main

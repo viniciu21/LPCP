@@ -6,10 +6,10 @@ declaration:
     count4: int;
 end_declaration
 
-
 main:
     entry = scan("Informe um valor que deseja verificar");
     while(entry >= 0):
+        #print(entry);
         if ((entry >= 0) && (entry <= 25)):
             count1 = count1 + 1;
         elif ((entry >= 26) && (entry <= 50)):
