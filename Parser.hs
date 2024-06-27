@@ -664,7 +664,7 @@ nestedForTokens nestDepth = do
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
 assignStmt = do
-  assignTok <- try assignVar  <|> try assignList <|> try assignMatrix
+  assignTok <- try assignVar <|> try assignList <|> try assignMatrix
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
@@ -713,7 +713,6 @@ assignList = do
   state <- getState
 
   return (id : assignSym : [value])
-        
 
 assignMatrix :: ParsecT [Token] MemoryState IO [Token]
 assignMatrix = do
@@ -728,15 +727,13 @@ assignMatrix = do
   value <- assignVal id
   state <- getState
 
-  updateState(assignMatrixValue id rows cols value)
+  updateState (assignMatrixValue id rows cols value)
 
   newstate <- getState
 
   liftIO $ printMemoryState newstate
 
   return (id : assignSym : [value])
-
-
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =
@@ -988,7 +985,7 @@ ifParenthesisExpression = do
 idTokenExpression :: ParsecT [Token] MemoryState IO Token
 idTokenExpression = do
   idToken' <- idToken
-  -- liftIO $ liftIO (putStrLn $ "Entrei no idToken: " ++ show idToken')
+  liftIO $ liftIO (putStrLn $ "Entrei no idToken: " ++ show idToken')
   -- liftIO $ liftIO (putStrLn $ "State no idToken: ")
   -- state <- getState
   -- liftIO $ printMemoryState state
@@ -999,7 +996,19 @@ idTokenExpression = do
       Just idVal -> return (fromTypeValuetoValue idVal)
       Nothing -> fail "Variable not found in local symtable"
     else case symtableGet idToken' symtable of
-      Just val -> handleTypeValue val
+      Just val -> do
+        let check = checkTypeValue val
+        if check
+          then do
+            leftBracket' <- leftBracketToken
+            line <- exponential
+            rightBracket' <- rightBracketToken
+            leftBracket'' <- leftBracketToken
+            col <- exponential
+            rightBracket'' <- rightBracketToken
+            return (fromTypeValuetoValue (getMatrixElement val line col))
+          else
+            return (fromTypeValuetoValue val)
       Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token
@@ -1062,10 +1071,9 @@ exponential :: ParsecT [Token] MemoryState IO Token
 exponential =
   do
     -- liftIO (putStrLn $ "Estou em exponential")
-    try
-      valueLiteralExpression
+    try valueLiteralExpression
       <|> try (lookAhead funcExpr *> funcExpr)
-      <|> idTokenExpression
+      <|> try idTokenExpression
 
 scanfExpression :: Token -> ParsecT [Token] MemoryState IO Token
 scanfExpression idScan = do

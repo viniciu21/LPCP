@@ -4,7 +4,7 @@
 {-# HLINT ignore "Use foldr" #-}
 module Utils where
 
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Control.Monad.IO.Class
 import Data.List (intercalate)
 import MemoryState
@@ -60,8 +60,7 @@ fromValuetoTypeValue (CharValue value pos) = CharType value pos
 fromValuetoTypeValue (StringValue value pos) = StringType value pos
 fromValuetoTypeValue (BoolValue value pos) = BoolType value pos
 fromValuetoTypeValue (MatrixValue (rows, cols, tokens) pos) =
-    MatrixType (rows, cols, map (map fromValuetoTypeValue) tokens) pos
-
+  MatrixType (rows, cols, map (map fromValuetoTypeValue) tokens) pos
 
 fromTypeValuetoValue :: TypeValue -> Token
 fromTypeValuetoValue (IntType value pos) = IntValue value pos
@@ -70,10 +69,9 @@ fromTypeValuetoValue (CharType value pos) = CharValue value pos
 fromTypeValuetoValue (StringType value pos) = StringValue value pos
 fromTypeValuetoValue (BoolType value pos) = BoolValue value pos
 fromTypeValuetoValue (MatrixType (rows, cols, values) pos) =
-    MatrixValue (rows, cols, map (map fromTypeValuetoValue) values) pos
+  MatrixValue (rows, cols, map (map fromTypeValuetoValue) values) pos
 
-
---(Int, Int, [[TypeValue]]) (Int, Int)
+-- (Int, Int, [[TypeValue]]) (Int, Int)
 
 {-
   Realiza a operação binária requisitada. Recebendo 3 parâmetros:
@@ -194,16 +192,16 @@ getTypeStr _ = error "deu ruim"
 
 printTypeValue :: Token -> IO String
 printTypeValue (IntValue b _) = do
-  liftIO $ putStrLn $ show b
+  liftIO $ print b
   return $ show b
 printTypeValue (StringValue b _) = do
   putStrLn b
   return b
 printTypeValue (FloatValue b _) = do
-  liftIO $ putStrLn $ show b
+  liftIO $ print b
   return $ show b
 printTypeValue (BoolValue b _) = do
-  liftIO $ putStrLn $ show b
+  liftIO $ print b
   return $ show b
 printTypeValue (CharValue b _) = do
   putStrLn [b] -- Print the character directly
@@ -243,9 +241,13 @@ matchTypeValues _ _ = False
   parametersDefaultDecl é chamado quando ocorre uma declaração de função na seção de declarações. Como os paramêtros ainda não possuem nome e valor, é atribuido nome "default" e defaultValue.
 -}
 parametersDefaultDecl :: [Token] -> [(Token, TypeValue)]
-parametersDefaultDecl [] = []
-parametersDefaultDecl (parameter : parametersTail) =
-  [(Id "default" (0, 0), getDefaultValue parameter)] ++ parametersDefaultDecl parametersTail
+parametersDefaultDecl parametersTail =
+  foldr
+    ( \parameter ->
+        (++) [(Id "default" (0, 0), getDefaultValue parameter)]
+    )
+    []
+    parametersTail
 
 parametersValuesFromIDs :: [Token] -> MemoryState -> [Token]
 parametersValuesFromIDs [] _ = []
@@ -376,71 +378,81 @@ showCallStackItem (token, locals, stmts) =
 
 lookAheadTwoTokens :: ParsecT [Token] MemoryState IO (Token, Token)
 lookAheadTwoTokens = try $ do
-  tokens <-
-    lookAhead
-      ( do
-          t1 <- anyToken
-          t2 <- anyToken
-          return (t1, t2)
-      )
-  return tokens
+  lookAhead
+    ( do
+        t1 <- anyToken
+        t2 <- anyToken
+        return (t1, t2)
+    )
 
 updateMatrix :: [[TypeValue]] -> Int -> Int -> TypeValue -> [[TypeValue]]
 updateMatrix matrix row col newVal =
-  take row matrix ++
-  [take col (matrix !! row) ++ [newVal] ++ drop (col + 1) (matrix !! row)] ++
-  drop (row + 1) matrix
+  take row matrix
+    ++ [take col (matrix !! row) ++ [newVal] ++ drop (col + 1) (matrix !! row)]
+    ++ drop (row + 1) matrix
+
+{-
+  Params: MatrixElements, Row, Col
+  Return: Element at that position
+-}
+getMatrixElement :: TypeValue -> Token -> Token -> TypeValue
+getMatrixElement matrix@(MatrixType (l, c, elements) pos) (IntValue row _) (IntValue col _) = (elements !! row) !! col
 
 assignMatrixValue :: Token -> Token -> Token -> Token -> MemoryState -> MemoryState
 assignMatrixValue id (IntValue row _) (IntValue col _) newValue state =
   case symtableGet id state of
-    Nothing -> error $ "Variable does not exist: " ++ show id 
-    Just (MatrixType (linha, coluna, matrix) pos) -> 
-      if row > linha - 1 || col > coluna - 1 then 
-        error $ "Out of bounds " ++ show id 
-      else
-        let updatedMatrix = updateMatrix matrix row col (fromValuetoTypeValue newValue)
-            updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
-        in updatedState
+    Nothing -> error $ "Variable does not exist: " ++ show id
+    Just (MatrixType (linha, coluna, matrix) pos) ->
+      if row > linha - 1 || col > coluna - 1
+        then
+          error $ "Out of bounds " ++ show id
+        else
+          let updatedMatrix = updateMatrix matrix row col (fromValuetoTypeValue newValue)
+              updatedState = symtableUpdate (id, MatrixType (linha, coluna, updatedMatrix) pos) state
+           in updatedState
     Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
 
 handleTypeValue :: TypeValue -> ParsecT [Token] MemoryState IO Token
 handleTypeValue val =
   case val of
-    MatrixType _ _ -> handleMatrixType val
+    MatrixType typeStruct pos -> return (fromTypeValuetoValue (MatrixType typeStruct pos))
     _ -> return (fromTypeValuetoValue val)
 
-handleMatrixType :: TypeValue -> ParsecT [Token] MemoryState IO Token
-handleMatrixType val = do
--- Suponha que `val` seja do tipo MatrixType
-  let MatrixType (_, _, matrixValues) pos = val
+checkTypeValue :: TypeValue -> Bool
+checkTypeValue (MatrixType _ _) = True
+checkTypeValue _ = False
 
--- Iterar sobre os valores da matriz e realizar a atribuição elemento por elemento
-  forM_ (zip [(row, col) | row <- [0..], col <- [0..]] (concat matrixValues)) $ \((row, col), elemValue) -> do
-    -- Recuperar o valor atual em mat1[row][col]
-    let currentValue = matrixValues !! row !! col
+-- handleMatrixType :: TypeValue -> ParsecT [Token] MemoryState IO Token
+-- handleMatrixType val = do
+--   -- Suponha que `val` seja do tipo MatrixType
+--   let MatrixType (_, _, matrixValues) pos = val
 
-    -- Realizar a atribuição somente se o valor for diferente para evitar redundâncias
-    when (currentValue /= elemValue) $ do
-        -- Atualizar mat2[row][col] com elemValue
-        let updatedMatrix = updateMatrixElement matrixValues (row, col) elemValue
+--   -- Iterar sobre os valores da matriz e realizar a atribuição elemento por elemento
+--   forM_ (zip [(row, col) | row <- [0 ..], col <- [0 ..]] (concat matrixValues)) $ \((row, col), elemValue) -> do
+--     -- Recuperar o valor atual em mat1[row][col]
+--     let currentValue = matrixValues !! row !! col
 
-        -- Aqui você deve atualizar a matriz mat2 na sua estrutura de estado (MemoryState)
-        -- Suponha que `updatedMatrix` é a nova versão de mat2
-        -- Você deve implementar a lógica adequada para atualizar a matriz na sua estrutura de estado
+--     -- Realizar a atribuição somente se o valor for diferente para evitar redundâncias
+--     when (currentValue /= elemValue) $ do
+--       -- Atualizar mat2[row][col] com elemValue
+--       let updatedMatrix = updateMatrixElement matrixValues (row, col) elemValue
 
-        -- Exemplo hipotético de atualização na estrutura de estado:
-        -- updateState $ \st -> st { mat2 = updatedMatrix }
+--       -- Aqui você deve atualizar a matriz mat2 na sua estrutura de estado (MemoryState)
+--       -- Suponha que `updatedMatrix` é a nova versão de mat2
+--       -- Você deve implementar a lógica adequada para atualizar a matriz na sua estrutura de estado
 
-        -- Retornar o token correspondente à atribuição em mat2[row][col]
-        return (fromTypeValuetoValue elemValue)
+--       -- Exemplo hipotético de atualização na estrutura de estado:
+--       -- updateState $ \st -> st { mat2 = updatedMatrix }
 
--- Neste exemplo hipotético, retornamos um token para indicar sucesso na atribuição
--- Seu código real deve retornar o token apropriado para representar a atribuição na gramática da sua linguagem
-  return (AssignmentSuccessToken pos)
+--       -- Retornar o token correspondente à atribuição em mat2[row][col]
+--       return (fromTypeValuetoValue elemValue)
+
+--   -- Neste exemplo hipotético, retornamos um token para indicar sucesso na atribuição
+--   -- Seu código real deve retornar o token apropriado para representar a atribuição na gramática da sua linguagem
+--   return (AssignmentSuccessToken pos)
 
 updateMatrixElement :: [[TypeValue]] -> (Int, Int) -> TypeValue -> [[TypeValue]]
 updateMatrixElement matrix (row, col) value =
-    let (left, (r:rs)) = splitAt row matrix
-        (left', (_:cs)) = splitAt col r
-    in left ++ [left' ++ [value] ++ cs] ++ rs
+  let (left, r : rs) = splitAt row matrix
+      (left', _ : cs) = splitAt col r
+   in left ++ [left' ++ [value] ++ cs] ++ rs
