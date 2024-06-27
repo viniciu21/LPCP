@@ -140,6 +140,22 @@ binaryEval (FloatValue x p) (Different _) (FloatValue y _) = BoolValue (x /= y) 
 binaryEval (BoolValue x p) (And _) (BoolValue y _) = BoolValue (x && y) p
 binaryEval (BoolValue x p) (Or _) (BoolValue y _) = BoolValue (x || y) p
 
+-- binaryEvalTypes :: TypeValue -> Token -> TypeValue -> TypeValue
+-- binaryEvalTypes (MatrixType (l1, c1, values1) pos1) (Plus _) (MatrixType (l2, c2, values2) pos2)
+--   | not (compatible (fromTypeValuetoValue (head (head values1))) (fromTypeValuetoValue (head (head values2)))) =
+--       error "Incompatible matrix element types"
+--   | l1 /= l2 || c1 /= c2 = error "Matrix dimensions must be the same"
+--   | otherwise =
+--       let resultValues = zipWith (zipWith addTypeValues) values1 values2
+--       in MatrixType (l1, c1, resultValues) pos1
+--   where
+--     addTypeValues :: TypeValue -> TypeValue -> TypeValue
+--     addTypeValues (IntType v1 pos1) (IntType v2 _) = IntType (v1 + v2) pos1
+--     addTypeValues (FloatType v1 pos1) (FloatType v2 _) = FloatType (v1 + v2) pos1
+--     -- Add more type cases as needed
+--     addTypeValues _ _ = error "Unsupported matrix element types for addition"
+
+
 {-
   Realiza a operação unária requisitada. Recebendo 2 parâmetros:
   param2: Token de Operação
