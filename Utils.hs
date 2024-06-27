@@ -376,3 +376,22 @@ lookAheadTwoTokens = try $ do
           return (t1, t2)
       )
   return tokens
+
+updateMatrix :: [[TypeValue]] -> Int -> Int -> TypeValue -> [[TypeValue]]
+updateMatrix matrix row col newVal =
+  take row matrix ++
+  [take col (matrix !! row) ++ [newVal] ++ drop (col + 1) (matrix !! row)] ++
+  drop (row + 1) matrix
+
+assignMatrixValue :: Token -> Token -> Token -> Token -> MemoryState -> MemoryState
+assignMatrixValue id (IntValue row _) (IntValue col _) newValue state =
+  case symtableGet id state of
+    Nothing -> error $ "Variable does not exist: " ++ show id 
+    Just (MatrixType (linha, coluna, matrix) pos) -> 
+      if row > linha - 1 || col > coluna - 1 then 
+        error $ "Out of bounds " ++ show id 
+      else
+        let updatedMatrix = updateMatrix matrix row col (fromValuetoTypeValue newValue)
+            updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
+        in updatedState
+    Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"

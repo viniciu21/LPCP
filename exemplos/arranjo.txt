@@ -1,9 +1,10 @@
 declaration:
     a : int;
     mat1[2][2]: int;
+    mat2[2][2]: int;
 end_declaration  
 
 
 main: 
-    mat1[0][1] = 2;
+    mat1[0][0] = 2;
 end_main
