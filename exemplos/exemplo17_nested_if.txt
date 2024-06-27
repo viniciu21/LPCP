@@ -7,10 +7,18 @@ end_declaration
 main:
     if(11 < 10):
         a = 5;
+        if (a < 10):
+            b = 10;
+        end_if;
     elif(10 > 11):
         b = 10;
     elif(10 > 9):
         c = 15;
+        if (c < 10):
+            b = 10;
+        elif(b < 10):
+            b = 14;
+        end_if;
     else:
         a = 15;
         b = 15;

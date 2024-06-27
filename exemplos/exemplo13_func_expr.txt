@@ -1,0 +1,24 @@
+declaration:
+    somaousub: int, int -> int;
+    soma: int, int -> int;
+    a: int;
+    b: int;
+    c: int;
+end_declaration
+
+func soma(d, e):
+    return d + e;
+end_func
+
+func somaousub(d, e):
+    f: int;
+    f = 6;
+    return soma(d, e) + f;
+end_func
+
+main:
+    a = 5;
+    b = somaousub(a, 3);
+    print(a);
+    print(b);
+end_main
