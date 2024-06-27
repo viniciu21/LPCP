@@ -637,7 +637,7 @@ nestedForTokens nestDepth = do
 ---- Assign
 assignStmt :: ParsecT [Token] MemoryState IO [Token]
 assignStmt = do
-  assignTok <- assignVar <|> assignList
+  assignTok <- assignVar  <|> assignList <|> assignMatrix
   semiCol <- semiColonToken
   return (assignTok ++ [semiCol])
 
@@ -686,6 +686,26 @@ assignList = do
   state <- getState
 
   return (id : assignSym : [value])
+        
+
+assignMatrix :: ParsecT [Token] MemoryState IO [Token]
+assignMatrix = do
+  id <- idToken
+  leftBrack1 <- leftBracketToken
+  rows <- exponential
+  rightBrack1 <- rightBracketToken
+  leftBrack2 <- leftBracketToken
+  cols <- exponential
+  rightBrack2 <- rightBracketToken
+  assignSym <- assignToken
+  value <- assignVal id
+  state <- getState
+
+  let matrix_aux = symtableGet id state
+
+  return (id : assignSym : [value])
+
+
 
 assignVal :: Token -> ParsecT [Token] MemoryState IO Token
 assignVal idScan =

@@ -1,13 +1,9 @@
 declaration:
     a : int;
     mat1[2][2]: int;
-    mat2[2][2]: float;
-    mat3[2][2]: string;
-    mat4[2][2]: char;
-    mat5[2][2]: bool;
 end_declaration  
 
 
 main: 
-    a = 2;
+    mat1[0][1] = 2;
 end_main
