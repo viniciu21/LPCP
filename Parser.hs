@@ -289,14 +289,41 @@ stmt :: ParsecT [Token] MemoryState IO [Token]
 stmt =
   try
     assignStmt
-    <|> returnStmt
-    <|> ifStmt
-    <|> whileStmt
-    <|> forStmt
+    <|> try returnStmt
+    <|> try ifStmt
+    <|> try whileStmt
+    <|> try forStmt
     <|> try (lookAhead decls *> decls)
-    <|> funcStmt
-    <|> listStmt
-    <|> printStmt
+    <|> try funcStmt
+    <|> try listStmt
+    <|> try printStmt
+    <|> try matrixStmt
+
+matrixStmt :: ParsecT [Token] MemoryState IO ([Token])
+matrixStmt = do
+  id@(Id name pos) <- idToken
+  leftBrack1 <- leftBracketToken
+  rows@(IntValue rowsVal (row, col)) <- exponential
+  rightBrack1 <- rightBracketToken
+  leftBrack2 <- leftBracketToken
+  cols@(IntValue colsVal _) <- exponential
+  rightBrack2 <- rightBracketToken
+  colon <- colonToken
+  varType <- typeToken
+  semiCol <- semiColonToken
+  state <- getState
+
+  let defaultMatrix = getDefaultValueMatrix rows cols (Type "matrix" pos) varType
+
+  -- A declaração só ocorre quando a flag estiver ativa
+  if isFlagTrue state
+    then do
+      updateState (symtableInsert (id, defaultMatrix)) -- primeiro argumento de getDefaultValue não é usado
+      updatedState <- getState
+      liftIO (putStrLn $ "Declaracao de variavel: " ++ show id ++ show updatedState)
+    else
+      liftIO (putStrLn "Flag is false, skipping variable declaration")
+  return ([id] ++ [colon] ++ [varType] ++ [semiCol])
 
 listStmt :: ParsecT [Token] MemoryState IO ([Token])
 listStmt = do
@@ -972,7 +999,7 @@ idTokenExpression = do
       Just idVal -> return (fromTypeValuetoValue idVal)
       Nothing -> fail "Variable not found in local symtable"
     else case symtableGet idToken' symtable of
-      Just val -> return (fromTypeValuetoValue val)
+      Just val -> handleTypeValue val
       Nothing -> fail "Variable not found"
 
 valueLiteralExpression :: ParsecT [Token] MemoryState IO Token

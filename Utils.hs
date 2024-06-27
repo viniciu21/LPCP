@@ -59,6 +59,9 @@ fromValuetoTypeValue (FloatValue value pos) = FloatType value pos
 fromValuetoTypeValue (CharValue value pos) = CharType value pos
 fromValuetoTypeValue (StringValue value pos) = StringType value pos
 fromValuetoTypeValue (BoolValue value pos) = BoolType value pos
+fromValuetoTypeValue (MatrixValue (rows, cols, tokens) pos) =
+    MatrixType (rows, cols, map (map fromValuetoTypeValue) tokens) pos
+
 
 fromTypeValuetoValue :: TypeValue -> Token
 fromTypeValuetoValue (IntType value pos) = IntValue value pos
@@ -66,6 +69,11 @@ fromTypeValuetoValue (FloatType value pos) = FloatValue value pos
 fromTypeValuetoValue (CharType value pos) = CharValue value pos
 fromTypeValuetoValue (StringType value pos) = StringValue value pos
 fromTypeValuetoValue (BoolType value pos) = BoolValue value pos
+fromTypeValuetoValue (MatrixType (rows, cols, values) pos) =
+    MatrixValue (rows, cols, map (map fromTypeValuetoValue) values) pos
+
+
+--(Int, Int, [[TypeValue]]) (Int, Int)
 
 {-
   Realiza a operação binária requisitada. Recebendo 3 parâmetros:
@@ -395,3 +403,44 @@ assignMatrixValue id (IntValue row _) (IntValue col _) newValue state =
             updatedState = symtableUpdate (id, (MatrixType (linha, coluna, updatedMatrix) pos)) state
         in updatedState
     Just _ -> error $ "Variable " ++ show id ++ " is not a matrix"
+
+handleTypeValue :: TypeValue -> ParsecT [Token] MemoryState IO Token
+handleTypeValue val =
+  case val of
+    MatrixType _ _ -> handleMatrixType val
+    _ -> return (fromTypeValuetoValue val)
+
+handleMatrixType :: TypeValue -> ParsecT [Token] MemoryState IO Token
+handleMatrixType val = do
+-- Suponha que `val` seja do tipo MatrixType
+  let MatrixType (_, _, matrixValues) pos = val
+
+-- Iterar sobre os valores da matriz e realizar a atribuição elemento por elemento
+  forM_ (zip [(row, col) | row <- [0..], col <- [0..]] (concat matrixValues)) $ \((row, col), elemValue) -> do
+    -- Recuperar o valor atual em mat1[row][col]
+    let currentValue = matrixValues !! row !! col
+
+    -- Realizar a atribuição somente se o valor for diferente para evitar redundâncias
+    when (currentValue /= elemValue) $ do
+        -- Atualizar mat2[row][col] com elemValue
+        let updatedMatrix = updateMatrixElement matrixValues (row, col) elemValue
+
+        -- Aqui você deve atualizar a matriz mat2 na sua estrutura de estado (MemoryState)
+        -- Suponha que `updatedMatrix` é a nova versão de mat2
+        -- Você deve implementar a lógica adequada para atualizar a matriz na sua estrutura de estado
+
+        -- Exemplo hipotético de atualização na estrutura de estado:
+        -- updateState $ \st -> st { mat2 = updatedMatrix }
+
+        -- Retornar o token correspondente à atribuição em mat2[row][col]
+        return (fromTypeValuetoValue elemValue)
+
+-- Neste exemplo hipotético, retornamos um token para indicar sucesso na atribuição
+-- Seu código real deve retornar o token apropriado para representar a atribuição na gramática da sua linguagem
+  return (AssignmentSuccessToken pos)
+
+updateMatrixElement :: [[TypeValue]] -> (Int, Int) -> TypeValue -> [[TypeValue]]
+updateMatrixElement matrix (row, col) value =
+    let (left, (r:rs)) = splitAt row matrix
+        (left', (_:cs)) = splitAt col r
+    in left ++ [left' ++ [value] ++ cs] ++ rs

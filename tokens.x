@@ -156,6 +156,7 @@ data Token =
     StringValue String (Int, Int)                      |
     CharValue Char (Int, Int)                          |
     BoolValue Bool (Int, Int)                          |
+    MatrixValue(Int, Int, [[Token]]) (Int, Int)        |
     Typedef   (Int, Int)                               |
     Struct    (Int, Int)                               |
     Scan String (Int, Int)                             |
