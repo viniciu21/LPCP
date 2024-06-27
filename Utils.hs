@@ -21,13 +21,13 @@ update_pos pos _ [] = pos
   getDefaultValue é utilizado na declaração de novas variáveis, para definir um valor básico para ela.
   Recebe como parâmetros um Token ID, um Token IntValue e um Token Type
 -}
-getDefaultValue :: Token -> TypeValue
-getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
-getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
-getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
-getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
-getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
-getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
+-- getDefaultValue :: Token -> TypeValue
+-- getDefaultValue (Type "int" (l, c)) = IntType 0 (l, c)
+-- getDefaultValue (Type "char" (l, c)) = CharType '\0' (l, c) -- Using null character as default
+-- getDefaultValue (Type "string" (l, c)) = StringType "" (l, c)
+-- getDefaultValue (Type "float" (l, c)) = FloatType 0.0 (l, c)
+-- getDefaultValue (Type "bool" (l, c)) = BoolType False (l, c)
+-- getDefaultValue (Type _ (_, _)) = error "This type doesn't exist"
 
 getDefaultValueDataTypes :: Token -> Token -> Token -> TypeValue
 getDefaultValueDataTypes (IntValue val _) (Type "list" (l, c)) varType = ListType (val, returnDefaultList val [] varType) (l, c)

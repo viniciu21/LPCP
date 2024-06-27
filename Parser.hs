@@ -584,7 +584,7 @@ forStmt = do
                     setInput stmtsBlock
                     _ <- many stmts
                     setInput updateAssign
-                    assign'' <- assign
+                    assign'' <- assignVar
                     updateState (removeLocalSymtableUntilLenght nLocalVar)
                     loop
                   else setInput input
@@ -600,7 +600,7 @@ forStmt = do
                     setInput stmtsBlock
                     _ <- many stmts
                     setInput updateAssign
-                    assign'' <- assign
+                    assign'' <- assignVar
                     updateState (symtableRemoveUntilLenght nVar)
                     loop
                   else setInput input
